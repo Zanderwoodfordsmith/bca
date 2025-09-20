@@ -82,6 +82,9 @@ class ProofWall {
                 console.log('   - show_on_wall:', winData.show_on_wall);
                 console.log('   - win_date:', winData.win_date);
                 console.log('   - coach_id:', winData.coach_id);
+                console.log('   - win_title:', winData.win_title);
+                console.log('   - win_description:', winData.win_description);
+                console.log('   - win_category:', winData.win_category);
             });
             
             // Get all wins without ordering to avoid index requirement
@@ -253,33 +256,69 @@ class ProofWall {
         
         const winDate = win.win_date ? new Date(win.win_date.seconds ? win.win_date.seconds * 1000 : win.win_date).toLocaleDateString() : 'Date needed';
         
-        // Simplified asset display - just show the media, no redundant titles/descriptions
-        const assetContent = assets.map(asset => {
-            if (asset.asset_url && asset.asset_url.trim() !== '') {
-                switch (asset.asset_type) {
-                    case 'Video Testimonial':
-                        return `<div class="asset-content">
-                            <video controls>
-                                <source src="${asset.asset_url}" type="video/mp4">
-                                Video testimonial available
-                            </video>
-                        </div>`;
-                    case 'Social Post':
-                        return `<div class="asset-content">
-                            <img src="${asset.asset_url}" alt="Social post" />
-                        </div>`;
-                    case 'Case Study':
-                        return `<div class="asset-content">
-                            <a href="${asset.asset_url}" target="_blank" class="case-study-link">📊 View Case Study</a>
-                        </div>`;
-                    default:
-                        return `<div class="asset-content">
-                            <a href="${asset.asset_url}" target="_blank" class="asset-link">📄 View Asset</a>
-                        </div>`;
-                }
-            }
-            return ''; // Don't show anything if no URL
-        }).join('');
+        // Enhanced asset display - show all assets with better formatting
+        const assetContent = assets.length > 0 ? `
+            <div class="assets-section">
+                <h5 class="assets-title">📎 Supporting Evidence (${assets.length})</h5>
+                <div class="assets-grid">
+                    ${assets.map(asset => {
+                        let assetHTML = '';
+                        
+                        // Show asset title and description if available
+                        if (asset.asset_title || asset.asset_description) {
+                            assetHTML += `<div class="asset-info">
+                                ${asset.asset_title ? `<h6 class="asset-title">${asset.asset_title}</h6>` : ''}
+                                ${asset.asset_description ? `<p class="asset-description">${asset.asset_description}</p>` : ''}
+                            </div>`;
+                        }
+                        
+                        // Show asset content based on type and URL
+                        if (asset.asset_url && asset.asset_url.trim() !== '') {
+                            switch (asset.asset_type) {
+                                case 'Video Testimonial':
+                                    assetHTML += `<div class="asset-media">
+                                        <video controls style="width: 100%; max-width: 400px; border-radius: 8px;">
+                                            <source src="${asset.asset_url}" type="video/mp4">
+                                            Video testimonial available
+                                        </video>
+                                    </div>`;
+                                    break;
+                                case 'Social Post':
+                                    assetHTML += `<div class="asset-media">
+                                        <img src="${asset.asset_url}" alt="Social post" style="width: 100%; max-width: 400px; border-radius: 8px;" />
+                                    </div>`;
+                                    break;
+                                case 'Case Study':
+                                    assetHTML += `<div class="asset-media">
+                                        <a href="${asset.asset_url}" target="_blank" class="case-study-link">📊 View Case Study</a>
+                                    </div>`;
+                                    break;
+                                case 'Written Quote':
+                                    assetHTML += `<div class="asset-media">
+                                        <div class="quote-content" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                                            <a href="${asset.asset_url}" target="_blank" class="quote-link">📄 Read Full Quote</a>
+                                        </div>
+                                    </div>`;
+                                    break;
+                                default:
+                                    assetHTML += `<div class="asset-media">
+                                        <a href="${asset.asset_url}" target="_blank" class="asset-link">📄 View Asset</a>
+                                    </div>`;
+                            }
+                        } else if (asset.asset_type === 'Written Quote' && asset.asset_description) {
+                            // Show written quote content even without URL
+                            assetHTML += `<div class="asset-media">
+                                <div class="quote-content" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                                    <p style="margin: 0; font-style: italic;">"${asset.asset_description}"</p>
+                                </div>
+                            </div>`;
+                        }
+                        
+                        return `<div class="asset-item">${assetHTML}</div>`;
+                    }).join('')}
+                </div>
+            </div>
+        ` : '';
 
         return `
             <div class="testimonial-card">
@@ -291,10 +330,10 @@ class ProofWall {
                     </div>
                 </div>
                 
-                <div class="win-category">${win.win_category}</div>
+                <div class="win-category">${win.win_category || 'Achievement'}</div>
                 
-                <h4 class="win-title">${win.win_title}</h4>
-                <p class="win-description">${win.win_description}</p>
+                <h4 class="win-title">${win.win_title || 'Untitled Win'}</h4>
+                <p class="win-description">${win.win_description || 'No description provided'}</p>
                 
                 ${assetContent}
                 
