@@ -76,6 +76,9 @@ class AdminPanel {
         // Close any open detail views first
         this.closeDetailViews();
         
+        // Reset all state to clean state
+        this.resetToCleanState();
+        
         // Update tab buttons
         document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
         document.getElementById(section + 'Tab').classList.add('active');
@@ -91,11 +94,32 @@ class AdminPanel {
         this.renderCurrentSection();
     }
 
+    resetToCleanState() {
+        // Clear search term
+        this.searchTerm = '';
+        if (this.searchInput) {
+            this.searchInput.value = '';
+        }
+        
+        // Clear any selected checkboxes
+        document.querySelectorAll('.row-checkbox:checked').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        // Close any open modals
+        this.closeColumnModal();
+    }
+
     closeDetailViews() {
         // Remove any detail pages
         const detailPage = document.getElementById('coachDetailPage');
         if (detailPage) {
             detailPage.remove();
+        }
+        
+        const winDetailPage = document.getElementById('winDetailPage');
+        if (winDetailPage) {
+            winDetailPage.remove();
         }
         
         // Make sure main content is visible
@@ -537,7 +561,7 @@ class AdminPanel {
                             ${coachWins.map(win => {
                                 const linkedAssets = this.assets.filter(asset => asset.win_id === win.id);
                                 return `
-                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                <tr style="border-bottom: 1px solid #f3f4f6; cursor: pointer;" onclick="adminPanel.showWinDetail('${win.id}')">
                                     <td style="padding: 12px 16px; color: #1f2937; font-weight: 500;">${win.win_title || 'Untitled'}</td>
                                     <td style="padding: 12px 16px; color: #6b7280;">${win.win_category || 'Uncategorized'}</td>
                                     <td style="padding: 12px 16px; color: #6b7280;">${this.formatDate(win.win_date)}</td>
@@ -555,8 +579,87 @@ class AdminPanel {
         document.body.appendChild(detailPage);
     }
 
+    showWinDetail(winId) {
+        console.log('Opening win detail for:', winId);
+        const win = this.wins.find(w => w.id === winId);
+        if (!win) return;
+
+        const coach = this.coaches.find(c => c.id === win.coach_id);
+        const coachName = coach ? `${coach.first_name} ${coach.last_name}` : 'Unknown Coach';
+
+        // Hide main content
+        const mainContent = document.querySelector('.admin-main');
+        mainContent.style.display = 'none';
+        
+        // Create win detail page
+        const detailPage = document.createElement('div');
+        detailPage.id = 'winDetailPage';
+        detailPage.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 250px;
+            width: calc(100% - 250px);
+            height: 100%;
+            background: white;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        `;
+        
+        const linkedAssets = this.assets.filter(asset => asset.win_id === winId);
+        
+        detailPage.innerHTML = `
+            <button onclick="adminPanel.showMainView()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-bottom: 20px;">
+                ← Back to Coaches
+            </button>
+            
+            <h1 style="margin-bottom: 30px; color: #1f2937;">${win.win_title || 'Untitled Win'}</h1>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                <div>
+                    <p><strong>Coach:</strong> ${coachName}</p>
+                    <p><strong>Category:</strong> ${win.win_category || 'Uncategorized'}</p>
+                    <p><strong>Date:</strong> ${this.formatDate(win.win_date)}</p>
+                </div>
+                <div>
+                    <p><strong>Description:</strong> ${win.win_description || 'No description provided'}</p>
+                </div>
+            </div>
+            
+            <h2 style="margin-bottom: 20px; color: #1f2937;">Assets (${linkedAssets.length})</h2>
+            ${linkedAssets.length === 0 ? 
+                '<p style="color: #6b7280;">No assets found</p>' :
+                `
+                <div style="background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f9fafb;">
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Title</th>
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Type</th>
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">URL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${linkedAssets.map(asset => `
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 12px 16px; color: #1f2937; font-weight: 500;">${asset.asset_title || 'Untitled'}</td>
+                                    <td style="padding: 12px 16px; color: #6b7280;">${asset.asset_type || 'Unknown'}</td>
+                                    <td style="padding: 12px 16px; color: #6b7280;">${asset.asset_url ? `<a href="${asset.asset_url}" target="_blank">View Asset</a>` : 'No URL'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                `
+            }
+        `;
+        
+        document.body.appendChild(detailPage);
+    }
+
     showMainView() {
         this.closeDetailViews();
+        this.resetToCleanState();
         document.getElementById('coachesSection').classList.add('active');
     }
 }
