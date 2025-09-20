@@ -19,17 +19,14 @@ class AdminPanel {
         // Tab buttons
         this.coachesTab = document.getElementById('coachesTab');
         this.winsTab = document.getElementById('winsTab');
-        this.assetsTab = document.getElementById('assetsTab');
         
         // Section containers
         this.coachesSection = document.getElementById('coachesSection');
         this.winsSection = document.getElementById('winsSection');
-        this.assetsSection = document.getElementById('assetsSection');
         
         // Table bodies
         this.coachesTableBody = document.getElementById('coachesTableBody');
         this.winsTableBody = document.getElementById('winsTableBody');
-        this.assetsTableBody = document.getElementById('assetsTableBody');
         
         // Other elements
         this.searchInput = document.getElementById('searchInput');
@@ -44,7 +41,6 @@ class AdminPanel {
         // Tab switching
         this.coachesTab.addEventListener('click', () => this.switchTab('coaches'));
         this.winsTab.addEventListener('click', () => this.switchTab('wins'));
-        this.assetsTab.addEventListener('click', () => this.switchTab('assets'));
         
         // Search
         this.searchInput.addEventListener('input', (e) => {
@@ -196,9 +192,6 @@ class AdminPanel {
             case 'wins':
                 this.renderWinsTable();
                 break;
-            case 'assets':
-                this.renderAssetsTable();
-                break;
         }
     }
 
@@ -318,44 +311,40 @@ class AdminPanel {
             return;
         }
         
-        this.winsTableBody.innerHTML = this.wins.map(win => {
+        let data = this.wins;
+        
+        // Apply search filter
+        if (this.searchTerm) {
+            data = data.filter(win => {
+                const coach = this.coaches.find(c => c.id === win.coach_id);
+                const coachName = coach ? `${coach.first_name} ${coach.last_name}` : '';
+                return win.win_title.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                       coachName.toLowerCase().includes(this.searchTerm.toLowerCase());
+            });
+        }
+        
+        if (data.length === 0) {
+            this.winsTableBody.innerHTML = '<tr><td colspan="4" class="loading">No wins found</td></tr>';
+            return;
+        }
+        
+        this.winsTableBody.innerHTML = data.map(win => {
             const coach = this.coaches.find(c => c.id === win.coach_id);
             const coachName = coach ? `${coach.first_name} ${coach.last_name}` : 'Unknown Coach';
             
             return `
-            <tr data-id="${win.id}">
-                <td class="checkbox-col">
+            <tr data-id="${win.id}" onclick="adminPanel.showWinDetail('${win.id}')" style="cursor: pointer;">
+                <td class="checkbox-col" onclick="event.stopPropagation()">
                     <input type="checkbox" class="row-checkbox" data-id="${win.id}">
                 </td>
                 <td class="col-coach">${coachName}</td>
-                <td class="col-title">${win.win_title}</td>
+                <td class="col-title">${win.win_title || 'Untitled'}</td>
                 <td class="col-date">${this.formatDate(win.win_date)}</td>
             </tr>
             `;
         }).join('');
     }
 
-    renderAssetsTable() {
-        if (this.assets.length === 0) {
-            this.assetsTableBody.innerHTML = '<tr><td colspan="3" class="loading">No assets found</td></tr>';
-            return;
-        }
-        
-        this.assetsTableBody.innerHTML = this.assets.map(asset => {
-            const win = this.wins.find(w => w.id === asset.win_id);
-            const winTitle = win ? win.win_title : 'Unknown Win';
-            
-            return `
-            <tr data-id="${asset.id}">
-                <td class="checkbox-col">
-                    <input type="checkbox" class="row-checkbox" data-id="${asset.id}">
-                </td>
-                <td class="col-win">${winTitle}</td>
-                <td class="col-title">${asset.asset_title}</td>
-            </tr>
-            `;
-        }).join('');
-    }
 
     formatDate(timestamp) {
         if (!timestamp) return '';
@@ -525,9 +514,11 @@ class AdminPanel {
         const coachWins = this.wins.filter(win => win.coach_id === coachId);
         
         detailPage.innerHTML = `
-            <button onclick="adminPanel.showMainView()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-bottom: 20px;">
-                ← Back to Coaches
-            </button>
+            <div style="position: absolute; top: 20px; right: 20px;">
+                <button onclick="adminPanel.showMainView()" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">
+                    ×
+                </button>
+            </div>
             
             <h1 style="margin-bottom: 30px; color: #1f2937;">${coach.first_name} ${coach.last_name}</h1>
             
@@ -609,9 +600,11 @@ class AdminPanel {
         const linkedAssets = this.assets.filter(asset => asset.win_id === winId);
         
         detailPage.innerHTML = `
-            <button onclick="adminPanel.showMainView()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-bottom: 20px;">
-                ← Back to Coaches
-            </button>
+            <div style="position: absolute; top: 20px; right: 20px;">
+                <button onclick="adminPanel.showMainView()" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">
+                    ×
+                </button>
+            </div>
             
             <h1 style="margin-bottom: 30px; color: #1f2937;">${win.win_title || 'Untitled Win'}</h1>
             
