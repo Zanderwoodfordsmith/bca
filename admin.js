@@ -5,6 +5,7 @@ class AdminPanel {
         this.wins = [];
         this.assets = [];
         this.currentSection = 'coaches';
+        this.searchTerm = '';
         
         // Initialize Firebase
         this.db = window.db || firebase.firestore();
@@ -15,41 +16,93 @@ class AdminPanel {
     }
 
     initializeElements() {
+        // Tab buttons
         this.coachesTab = document.getElementById('coachesTab');
         this.winsTab = document.getElementById('winsTab');
         this.assetsTab = document.getElementById('assetsTab');
         
+        // Section containers
         this.coachesSection = document.getElementById('coachesSection');
         this.winsSection = document.getElementById('winsSection');
         this.assetsSection = document.getElementById('assetsSection');
         
+        // Table bodies
         this.coachesTableBody = document.getElementById('coachesTableBody');
         this.winsTableBody = document.getElementById('winsTableBody');
         this.assetsTableBody = document.getElementById('assetsTableBody');
         
+        // Other elements
         this.searchInput = document.getElementById('searchInput');
+        this.columnToggleBtn = document.getElementById('columnToggleBtn');
+        this.closeColumnModalBtn = document.getElementById('closeColumnModal');
+        this.applyColumns = document.getElementById('applyColumns');
+        this.viewProofWall = document.getElementById('viewProofWall');
+        this.addCoachBtn = document.getElementById('addCoachBtn');
     }
 
     bindEvents() {
+        // Tab switching
         this.coachesTab.addEventListener('click', () => this.switchTab('coaches'));
         this.winsTab.addEventListener('click', () => this.switchTab('wins'));
         this.assetsTab.addEventListener('click', () => this.switchTab('assets'));
         
+        // Search
         this.searchInput.addEventListener('input', (e) => {
             this.searchTerm = e.target.value;
             this.renderCurrentSection();
         });
+        
+        // Column modal
+        this.columnToggleBtn.addEventListener('click', () => this.showColumnModal());
+        this.closeColumnModalBtn.addEventListener('click', () => this.closeColumnModal());
+        this.applyColumns.addEventListener('click', () => this.applyColumnChanges());
+        
+        // Other buttons
+        this.viewProofWall.addEventListener('click', () => this.viewProofWall());
+        this.addCoachBtn.addEventListener('click', () => this.addCoach());
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('columnModal');
+            if (e.target === modal) {
+                this.closeColumnModal();
+            }
+        });
     }
 
     switchTab(section) {
+        console.log('Switching to:', section);
+        
+        // Close any open detail views first
+        this.closeDetailViews();
+        
+        // Update tab buttons
         document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
         document.getElementById(section + 'Tab').classList.add('active');
         
+        // Update sections
         document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
         document.getElementById(section + 'Section').classList.add('active');
         
+        // Update breadcrumb
+        document.getElementById('currentSectionTitle').textContent = section.charAt(0).toUpperCase() + section.slice(1);
+        
         this.currentSection = section;
         this.renderCurrentSection();
+    }
+
+    closeDetailViews() {
+        // Remove any detail pages
+        const detailPage = document.getElementById('coachDetailPage');
+        if (detailPage) {
+            detailPage.remove();
+        }
+        
+        // Make sure main content is visible
+        const mainContent = document.querySelector('.admin-main');
+        if (mainContent) {
+            mainContent.style.display = 'block';
+        }
     }
 
     async loadAllData() {
@@ -66,8 +119,8 @@ class AdminPanel {
             console.error('Error loading data:', error);
             // Use sample data if Firebase fails
             this.coaches = [
-                { id: '1', first_name: 'John', last_name: 'Doe', email: 'john@example.com' },
-                { id: '2', first_name: 'Jane', last_name: 'Smith', email: 'jane@example.com' }
+                { id: '1', first_name: 'John', last_name: 'Doe', email: 'john@example.com', gender: 'Male' },
+                { id: '2', first_name: 'Jane', last_name: 'Smith', email: 'jane@example.com', gender: 'Female' }
             ];
             this.wins = [
                 { id: '1', coach_id: '1', win_title: 'Sample Win 1', win_date: { seconds: Date.now() / 1000 } },
@@ -129,12 +182,13 @@ class AdminPanel {
         console.log('Rendering coaches table, count:', this.coaches.length);
         
         if (this.coaches.length === 0) {
-            this.coachesTableBody.innerHTML = '<tr><td colspan="3" class="loading">Loading coaches...</td></tr>';
+            this.coachesTableBody.innerHTML = '<tr><td colspan="4" class="loading">Loading coaches...</td></tr>';
             return;
         }
         
         let data = this.coaches;
         
+        // Apply search filter
         if (this.searchTerm) {
             data = data.filter(coach => 
                 (coach.first_name + ' ' + coach.last_name).toLowerCase().includes(this.searchTerm.toLowerCase())
@@ -142,23 +196,96 @@ class AdminPanel {
         }
         
         if (data.length === 0) {
-            this.coachesTableBody.innerHTML = '<tr><td colspan="3" class="loading">No coaches found</td></tr>';
+            this.coachesTableBody.innerHTML = '<tr><td colspan="4" class="loading">No coaches found</td></tr>';
             return;
         }
+
+        // Sort coaches by most recent win (newest first)
+        data.sort((a, b) => {
+            const aWins = this.wins.filter(win => win.coach_id === a.id);
+            const bWins = this.wins.filter(win => win.coach_id === b.id);
+            
+            // Get most recent win for each coach
+            const aMostRecent = aWins.length > 0 ? Math.max(...aWins.map(win => win.win_date?.seconds || 0)) : 0;
+            const bMostRecent = bWins.length > 0 ? Math.max(...bWins.map(win => win.win_date?.seconds || 0)) : 0;
+            
+            // Sort by most recent win (newest first)
+            return bMostRecent - aMostRecent;
+        });
+
+        // Get visible columns from the table headers
+        const visibleColumns = this.getVisibleColumns();
 
         this.coachesTableBody.innerHTML = data.map(coach => {
             const linkedWins = this.wins.filter(win => win.coach_id === coach.id);
             
-            return `
+            // Get most recent win
+            const mostRecentWin = linkedWins.length > 0 
+                ? linkedWins.reduce((latest, win) => {
+                    const winTime = win.win_date?.seconds || 0;
+                    const latestTime = latest.win_date?.seconds || 0;
+                    return winTime > latestTime ? win : latest;
+                })
+                : null;
+            
+            // Build row HTML based on visible columns
+            let rowHTML = `
             <tr data-id="${coach.id}" onclick="adminPanel.showCoachDetail('${coach.id}')" style="cursor: pointer;">
                 <td class="checkbox-col" onclick="event.stopPropagation()">
                     <input type="checkbox" class="row-checkbox" data-id="${coach.id}">
-                </td>
-                <td class="col-name">${coach.first_name || ''} ${coach.last_name || ''}</td>
-                <td class="col-wins-count">${linkedWins.length}</td>
-            </tr>
-            `;
+                </td>`;
+            
+            // Add columns based on visibility
+            if (visibleColumns.includes('name')) {
+                rowHTML += `<td class="col-name">${coach.first_name || ''} ${coach.last_name || ''}</td>`;
+            }
+            if (visibleColumns.includes('wins_count')) {
+                rowHTML += `<td class="col-wins-count">${linkedWins.length}</td>`;
+            }
+            if (visibleColumns.includes('most_recent_win')) {
+                rowHTML += `<td class="col-most-recent-win">${mostRecentWin ? this.formatDateShort(mostRecentWin.win_date) : '-'}</td>`;
+            }
+            if (visibleColumns.includes('email')) {
+                rowHTML += `<td class="col-email">${coach.email || '-'}</td>`;
+            }
+            if (visibleColumns.includes('join_date')) {
+                rowHTML += `<td class="col-join-date">${this.formatJoinDate(coach.join_date)}</td>`;
+            }
+            if (visibleColumns.includes('gender')) {
+                rowHTML += `<td class="col-gender">${coach.gender || '-'}</td>`;
+            }
+            if (visibleColumns.includes('bio')) {
+                rowHTML += `<td class="col-bio">${coach.bio ? (coach.bio.length > 50 ? coach.bio.substring(0, 50) + '...' : coach.bio) : '-'}</td>`;
+            }
+            if (visibleColumns.includes('linkedin')) {
+                rowHTML += `<td class="col-linkedin">${coach.linkedin_url ? 'Link' : '-'}</td>`;
+            }
+            
+            rowHTML += `</tr>`;
+            return rowHTML;
         }).join('');
+    }
+
+    getVisibleColumns() {
+        const visibleColumns = [];
+        const headers = document.querySelectorAll('#coachesSection th');
+        
+        headers.forEach(header => {
+            // Only include headers that are actually visible (not display: none)
+            if (header.style.display !== 'none' && header.offsetParent !== null) {
+                const className = header.className;
+                if (className.includes('col-name')) visibleColumns.push('name');
+                else if (className.includes('col-wins-count')) visibleColumns.push('wins_count');
+                else if (className.includes('col-most-recent-win')) visibleColumns.push('most_recent_win');
+                else if (className.includes('col-email')) visibleColumns.push('email');
+                else if (className.includes('col-join-date')) visibleColumns.push('join_date');
+                else if (className.includes('col-gender')) visibleColumns.push('gender');
+                else if (className.includes('col-bio')) visibleColumns.push('bio');
+                else if (className.includes('col-linkedin')) visibleColumns.push('linkedin');
+            }
+        });
+        
+        return visibleColumns;
     }
 
     renderWinsTable() {
@@ -212,6 +339,141 @@ class AdminPanel {
         return date.toLocaleDateString();
     }
 
+    formatJoinDate(timestamp) {
+        if (!timestamp) return 'Need to add date';
+        const date = new Date(timestamp.seconds * 1000);
+        
+        // Check if date is before 2000
+        if (date.getFullYear() < 2000) {
+            return 'Need to add date';
+        }
+        
+        // Format as "9 Sep 2025"
+        const day = date.getDate();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+        
+        return `${day} ${month} ${year}`;
+    }
+
+    formatDateShort(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp.seconds * 1000);
+        const day = date.getDate();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+        return `${day} ${month} ${year}`;
+    }
+
+    showColumnModal() {
+        console.log('Showing column modal');
+        const modal = document.getElementById('columnModal');
+        if (modal) {
+            modal.classList.add('show');
+            console.log('Modal shown successfully');
+        } else {
+            console.error('Modal not found');
+        }
+    }
+
+    closeColumnModal() {
+        console.log('Closing column modal');
+        const modal = document.getElementById('columnModal');
+        if (modal) {
+            modal.classList.remove('show');
+            console.log('Modal closed successfully');
+        } else {
+            console.error('Modal not found');
+        }
+    }
+
+    applyColumnChanges() {
+        console.log('Applying column changes');
+        
+        // Get all checked checkboxes
+        const checkboxes = document.querySelectorAll('#columnModal input[type="checkbox"]');
+        const checkedColumns = [];
+        
+        checkboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const columnName = checkbox.getAttribute('data-column');
+                if (columnName) {
+                    checkedColumns.push(columnName);
+                }
+            }
+        });
+        
+        console.log('Selected columns:', checkedColumns);
+        
+        // Update visible columns based on selection
+        this.updateVisibleColumns(checkedColumns);
+        
+        // Close the modal
+        this.closeColumnModal();
+        console.log('Modal should be closed now');
+    }
+
+    updateVisibleColumns(selectedColumns) {
+        // Map column names to their corresponding classes and visibility
+        const columnMap = {
+            'name': { class: 'col-name', show: selectedColumns.includes('name') },
+            'wins_count': { class: 'col-wins-count', show: selectedColumns.includes('wins_count') },
+            'most_recent_win': { class: 'col-most-recent-win', show: selectedColumns.includes('most_recent_win') },
+            'email': { class: 'col-email', show: selectedColumns.includes('email') },
+            'join_date': { class: 'col-join-date', show: selectedColumns.includes('join_date') },
+            'gender': { class: 'col-gender', show: selectedColumns.includes('gender') },
+            'bio': { class: 'col-bio', show: selectedColumns.includes('bio') },
+            'linkedin': { class: 'col-linkedin', show: selectedColumns.includes('linkedin') }
+        };
+
+        // Update table headers
+        const tableHeaders = document.querySelectorAll('#coachesSection th');
+        tableHeaders.forEach(header => {
+            const className = header.className;
+            // Find matching column by CSS class
+            for (const [columnName, config] of Object.entries(columnMap)) {
+                if (className.includes(config.class)) {
+                    header.style.display = config.show ? 'table-cell' : 'none';
+                    break;
+                }
+            }
+        });
+
+        // Update table cells
+        const tableRows = document.querySelectorAll('#coachesSection tbody tr');
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (index > 0) { // Skip checkbox column
+                    const className = cell.className;
+                    // Find matching column by CSS class
+                    for (const [columnName, config] of Object.entries(columnMap)) {
+                        if (className.includes(config.class)) {
+                            cell.style.display = config.show ? 'table-cell' : 'none';
+                            break;
+                        }
+                    }
+                }
+            });
+        });
+
+        // Re-render the table to apply changes
+        this.renderCoachesTable();
+    }
+
+    viewProofWall() {
+        console.log('Opening proof wall');
+        window.open('index.html', '_blank');
+    }
+
+    addCoach() {
+        console.log('Add coach clicked');
+        alert('Add coach functionality coming soon!');
+    }
+
     showCoachDetail(coachId) {
         console.log('Opening coach detail for:', coachId);
         const coach = this.coaches.find(c => c.id === coachId);
@@ -260,12 +522,33 @@ class AdminPanel {
             <h2 style="margin-bottom: 20px; color: #1f2937;">Wins (${coachWins.length})</h2>
             ${coachWins.length === 0 ? 
                 '<p style="color: #6b7280;">No wins found</p>' :
-                coachWins.map(win => `
-                    <div style="background: #f9fafb; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #3b82f6;">
-                        <h3 style="margin: 0 0 5px 0; color: #1f2937;">${win.win_title || 'Untitled'}</h3>
-                        <p style="margin: 0; color: #6b7280;">Category: ${win.win_category || 'Uncategorized'} | Date: ${this.formatDate(win.win_date)}</p>
-                    </div>
-                `).join('')
+                `
+                <div style="background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f9fafb;">
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Title</th>
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Category</th>
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Date</th>
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Assets</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${coachWins.map(win => {
+                                const linkedAssets = this.assets.filter(asset => asset.win_id === win.id);
+                                return `
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 12px 16px; color: #1f2937; font-weight: 500;">${win.win_title || 'Untitled'}</td>
+                                    <td style="padding: 12px 16px; color: #6b7280;">${win.win_category || 'Uncategorized'}</td>
+                                    <td style="padding: 12px 16px; color: #6b7280;">${this.formatDate(win.win_date)}</td>
+                                    <td style="padding: 12px 16px; color: #6b7280;">${linkedAssets.length} assets</td>
+                                </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                `
             }
         `;
         
@@ -273,14 +556,7 @@ class AdminPanel {
     }
 
     showMainView() {
-        const detailPage = document.getElementById('coachDetailPage');
-        if (detailPage) {
-            detailPage.remove();
-        }
-        
-        const mainContent = document.querySelector('.admin-main');
-        mainContent.style.display = 'block';
-        
+        this.closeDetailViews();
         document.getElementById('coachesSection').classList.add('active');
     }
 }

@@ -34,550 +34,118 @@
             </nav>
             <div class="sidebar-footer">
                 <button id="viewProofWall" class="btn btn-primary">View Proof Wall</button>
-                <div class="settings-menu">
-                    <button id="settingsBtn" class="settings-btn">⚙️ Settings</button>
-                    <div id="settingsDropdown" class="settings-dropdown">
-                        <button id="importBtn" class="settings-item">Import Data</button>
-                        <button id="inviteUserBtn" class="settings-item">Invite Users</button>
-                        <button id="embedBtn" class="settings-item">Get Embed Code</button>
-                    </div>
-                </div>
             </div>
         </aside>
 
         <!-- Main Content -->
         <main class="admin-main">
             <!-- Breadcrumb Navigation -->
-            <div id="breadcrumb" class="breadcrumb" style="display: none;">
-                <span class="breadcrumb-item" onclick="adminPanel.showMainView()">← Back</span>
-                <span class="breadcrumb-separator">/</span>
-                <span id="breadcrumbCurrent">Current</span>
+            <div class="breadcrumb">
+                <span id="currentSectionTitle">Coaches</span>
             </div>
 
-            <!-- Main List View -->
-            <div id="mainView">
-                <header class="admin-header">
-                    <h1 id="currentSectionTitle">Coaches</h1>
-                    <div class="header-actions">
-                        <button id="addCoachBtn" class="btn btn-primary">Add Coach</button>
-                        <button id="addWinBtn" class="btn btn-primary" style="display: none;">Add Win</button>
-                        <button id="addAssetBtn" class="btn btn-primary" style="display: none;">Add Asset</button>
-                        <button id="bulkDeleteBtn" class="btn btn-danger" style="display: none;">Delete Selected</button>
-                    </div>
-                </header>
-
-            <!-- Toolbar -->
-            <div class="toolbar">
-                <div class="toolbar-left">
-                    <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Search...">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-                            <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                    </div>
+            <!-- Search and Controls -->
+            <div class="search-container">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="Search...">
                 </div>
-                <div class="toolbar-right">
-                    <select id="groupBySelect">
-                        <option value="">Group by...</option>
-                        <option value="category">Category</option>
-                        <option value="coach">Coach</option>
-                        <option value="date">Date</option>
-                        <option value="status">Status</option>
-                    </select>
-                    <button id="columnToggleBtn" class="btn btn-outline">Columns</button>
+                <div class="table-controls">
+                    <button id="groupByBtn" class="btn btn-secondary">Group by...</button>
+                    <button id="columnToggleBtn" class="btn btn-secondary">Columns</button>
+                    <button id="addCoachBtn" class="btn btn-primary">Add Coach</button>
                 </div>
             </div>
 
-            <!-- Column Modal -->
-            <div id="columnModal" class="modal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Show/Hide Columns</h3>
-                        <span class="close" onclick="adminPanel.closeColumnModal()">&times;</span>
-                    </div>
-            <div class="modal-body">
-                <div id="columnCheckboxes">
-                    <label><input type="checkbox" value="name" checked> Name</label>
-                    <label><input type="checkbox" value="email"> Email</label>
-                    <label><input type="checkbox" value="join_date"> Join Date</label>
-                    <label><input type="checkbox" value="wins_count" checked> Wins</label>
-                    <label><input type="checkbox" value="recent_win_date"> Most Recent Win</label>
-                    <label><input type="checkbox" value="gender"> Gender</label>
-                    <label><input type="checkbox" value="bio"> Bio</label>
-                    <label><input type="checkbox" value="linkedin_url"> LinkedIn</label>
-                </div>
-            </div>
-                </div>
-            </div>
-
-    <!-- Import Modal -->
-    <div id="importModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Import Data</h2>
-            <div class="import-options">
-                <div class="import-option">
-                    <h3>Coaches</h3>
-                    <p>Import coach information from CSV file</p>
-                    <div class="import-actions">
-                        <input type="file" id="coachCsvFile" accept=".csv" style="display: none;">
-                        <button id="selectCoachFile" class="btn btn-secondary">Select CSV File</button>
-                        <button id="downloadCoachTemplate" class="btn btn-outline">Download Template</button>
-                    </div>
-                </div>
-                
-                <div class="import-option">
-                    <h3>Wins</h3>
-                    <p>Import win/testimonial data from CSV file</p>
-                    <div class="import-actions">
-                        <input type="file" id="winCsvFile" accept=".csv" style="display: none;">
-                        <button id="selectWinFile" class="btn btn-secondary">Select CSV File</button>
-                        <button id="downloadWinTemplate" class="btn btn-outline">Download Template</button>
-                    </div>
-                </div>
-                
-                <div class="import-option">
-                    <h3>Assets</h3>
-                    <p>Import proof assets from CSV file</p>
-                    <div class="import-actions">
-                        <input type="file" id="assetCsvFile" accept=".csv" style="display: none;">
-                        <button id="selectAssetFile" class="btn btn-secondary">Select CSV File</button>
-                        <button id="downloadAssetTemplate" class="btn btn-outline">Download Template</button>
-                    </div>
-                </div>
-            </div>
-            <div class="form-actions">
-                <button class="btn btn-secondary" onclick="closeModal('importModal')">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- User Invitation Modal -->
-    <div id="inviteUserModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('inviteUserModal')">&times;</span>
-            <h2>Invite Team Members</h2>
-            
-            <div class="form-section">
-                <h3>Invite New User</h3>
-                <form id="inviteUserForm">
-                    <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" id="inviteEmail" placeholder="user@businesscoachacademy.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Role</label>
-                        <select id="inviteRole" required>
-                            <option value="admin">Admin - Full access</option>
-                            <option value="editor">Editor - Can edit content</option>
-                            <option value="viewer">Viewer - Read-only access</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Custom Message (Optional)</label>
-                        <textarea id="inviteMessage" rows="3" placeholder="Welcome to the Business Coach Academy admin panel!"></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Send Invitation</button>
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('inviteUserModal')">Cancel</button>
-                    </div>
-                </form>
-            </div>
-            
-            <div class="form-section">
-                <h3>Current Team Members</h3>
-                <div id="teamMembersList" class="team-members-list">
-                    <!-- Team members will be populated here -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-            <!-- Coaches Management -->
+            <!-- Coaches Section -->
             <div id="coachesSection" class="admin-section active">
                 <div class="data-table">
-                    <table id="coachesTable">
+                    <table>
                         <thead>
                             <tr>
-                                <th class="checkbox-col">
-                                    <input type="checkbox" id="selectAllCoaches">
-                                </th>
-                                <th class="col-name sortable" data-field="name" data-sort="name">Name</th>
-                                <th class="col-wins-count sortable" data-field="wins_count" data-sort="wins_count">Wins</th>
+                                <th class="checkbox-col"></th>
+                                <th class="col-name">Name</th>
+                                <th class="col-wins-count">Wins</th>
+                                <th class="col-most-recent-win">Most Recent Win</th>
+                                <th class="col-email" style="display: none;">Email</th>
+                                <th class="col-join-date" style="display: none;">Join Date</th>
+                                <th class="col-gender" style="display: none;">Gender</th>
+                                <th class="col-bio" style="display: none;">Bio</th>
+                                <th class="col-linkedin" style="display: none;">LinkedIn</th>
                             </tr>
                         </thead>
                         <tbody id="coachesTableBody">
-                            <tr>
-                                <td colspan="3" class="loading">Loading coaches...</td>
-                            </tr>
+                            <tr><td colspan="4" class="loading">Loading coaches...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Wins Management -->
+            <!-- Wins Section -->
             <div id="winsSection" class="admin-section">
                 <div class="data-table">
-                    <table id="winsTable">
+                    <table>
                         <thead>
                             <tr>
-                                <th class="checkbox-col">
-                                    <input type="checkbox" id="selectAllWins">
-                                </th>
-                                <th class="col-coach sortable" data-field="coach" data-sort="coach">Coach</th>
-                                <th class="col-title sortable" data-field="title" data-sort="title">Title</th>
-                                <th class="col-category sortable" data-field="category" data-sort="category">Category</th>
-                                <th class="col-date sortable" data-field="date" data-sort="date">Date</th>
-                                <th class="col-show-wall sortable" data-field="show_wall" data-sort="show_wall">Show on Wall</th>
+                                <th class="checkbox-col"></th>
+                                <th class="col-coach">Coach</th>
+                                <th class="col-title">Title</th>
+                                <th class="col-date">Date</th>
                             </tr>
                         </thead>
                         <tbody id="winsTableBody">
-                            <tr>
-                                <td colspan="6" class="loading">Loading wins...</td>
-                            </tr>
+                            <tr><td colspan="4" class="loading">Loading wins...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Assets Management -->
+            <!-- Assets Section -->
             <div id="assetsSection" class="admin-section">
                 <div class="data-table">
-                    <table id="assetsTable">
+                    <table>
                         <thead>
                             <tr>
-                                <th class="checkbox-col">
-                                    <input type="checkbox" id="selectAllAssets">
-                                </th>
-                                <th class="col-win sortable" data-field="win" data-sort="win">Win</th>
-                                <th class="col-type sortable" data-field="type" data-sort="type">Type</th>
-                                <th class="col-title sortable" data-field="title" data-sort="title">Title</th>
-                                <th class="col-status sortable" data-field="status" data-sort="status">Status</th>
-                                <th class="col-url sortable" data-field="url" data-sort="url">URL</th>
+                                <th class="checkbox-col"></th>
+                                <th class="col-win">Win</th>
+                                <th class="col-title">Title</th>
                             </tr>
                         </thead>
                         <tbody id="assetsTableBody">
-                            <tr>
-                                <td colspan="6" class="loading">Loading assets...</td>
-                            </tr>
+                            <tr><td colspan="3" class="loading">Loading assets...</td></tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-            </div>
-
-            <!-- Coach Detail View -->
-            <div id="coachDetailView" class="detail-view" style="display: none;">
-                <header class="detail-header">
-                    <div class="detail-title">
-                        <h1 id="coachDetailName">Coach Name</h1>
-                        <div class="detail-meta">
-                            <span id="coachDetailEmail">Email</span> • 
-                            <span id="coachDetailJoinDate">Join Date</span> • 
-                            <span id="coachDetailWins">X wins</span>
-                        </div>
-                    </div>
-                    <div class="detail-actions">
-                        <button onclick="adminPanel.editCoachFromDetail()" class="btn btn-primary">Edit Coach</button>
-                        <button onclick="adminPanel.showMainView()" class="btn btn-secondary">← Back</button>
-                    </div>
-                </header>
-
-                <div class="detail-content">
-                    <div class="detail-info">
-                        <div class="info-section">
-                            <h3>Coach Information</h3>
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <label>Phone:</label>
-                                    <span id="coachDetailPhone">Not provided</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>Website:</label>
-                                    <span id="coachDetailWebsite">Not provided</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>LinkedIn:</label>
-                                    <span id="coachDetailLinkedIn">Not provided</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>Book a Call:</label>
-                                    <span id="coachDetailBookCall">Not provided</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>Gender:</label>
-                                    <span id="coachDetailGender">Not specified</span>
-                                </div>
-                                <div class="info-item full-width">
-                                    <label>Bio:</label>
-                                    <span id="coachDetailBio">No bio available</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="detail-tabs">
-                        <div class="tab-nav">
-                            <button class="tab-btn active" onclick="adminPanel.switchDetailTab('wins')">Wins <span id="winsTabCount" class="tab-count">(0)</span></button>
-                        </div>
-                        
-                        <div id="winsTab" class="tab-content active">
-                            <div class="tab-header">
-                                <h3>Linked Wins</h3>
-                                <button onclick="adminPanel.addWinForCoach()" class="btn btn-primary">Add Win</button>
-                            </div>
-                            <div id="coachWinsList" class="wins-table-container">
-                                <!-- Wins table will be populated here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Win Detail View -->
-            <div id="winDetailView" class="detail-view" style="display: none;">
-                <header class="detail-header">
-                    <div class="detail-title">
-                        <h1 id="winDetailTitle">Win Title</h1>
-                        <div class="detail-meta">
-                            <span id="winDetailCoach">Coach Name</span> • 
-                            <span id="winDetailCategory">Category</span> • 
-                            <span id="winDetailDate">Date</span> • 
-                            <span id="winDetailAssets">X assets</span>
-                        </div>
-                    </div>
-                    <div class="detail-actions">
-                        <button onclick="adminPanel.editWinFromDetail()" class="btn btn-primary">Edit Win</button>
-                        <button onclick="adminPanel.showMainView()" class="btn btn-secondary">← Back</button>
-                    </div>
-                </header>
-
-                <div class="detail-content">
-                    <div class="detail-info">
-                        <div class="info-section">
-                            <h3>Win Information</h3>
-                            <div class="info-grid">
-                                <div class="info-item full-width">
-                                    <label>Description:</label>
-                                    <span id="winDetailDescription">No description</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>Show on Wall:</label>
-                                    <span id="winDetailShowOnWall">No</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="detail-tabs">
-                        <div class="tab-nav">
-                            <button class="tab-btn active" onclick="adminPanel.switchDetailTab('assets')">Assets <span id="assetsTabCount" class="tab-count">(0)</span></button>
-                        </div>
-                        
-                        <div id="assetsTab" class="tab-content active">
-                            <div class="tab-header">
-                                <h3>Proof Assets</h3>
-                                <button onclick="adminPanel.addAssetForWin()" class="btn btn-primary">Add Asset</button>
-                            </div>
-                            <div id="winAssetsList" class="assets-list">
-                                <!-- Assets will be populated here -->
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Modals -->
-    <div id="coachModal" class="modal">
+    <!-- Column Modal -->
+    <div id="columnModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Add/Edit Coach</h2>
-            <form id="coachForm">
-                <input type="hidden" id="coachId">
-                <div class="form-group">
-                    <label>First Name *</label>
-                    <input type="text" id="coachFirstName" required>
+            <div class="modal-header">
+                <h3>Select Columns</h3>
+                <button id="closeColumnModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="column-options">
+                    <label><input type="checkbox" checked data-column="name"> Name</label>
+                    <label><input type="checkbox" checked data-column="wins_count"> Wins</label>
+                    <label><input type="checkbox" checked data-column="most_recent_win"> Most Recent Win</label>
+                    <label><input type="checkbox" data-column="email"> Email</label>
+                    <label><input type="checkbox" data-column="join_date"> Join Date</label>
+                    <label><input type="checkbox" data-column="gender"> Gender</label>
+                    <label><input type="checkbox" data-column="bio"> Bio</label>
+                    <label><input type="checkbox" data-column="linkedin"> LinkedIn</label>
                 </div>
-                <div class="form-group">
-                    <label>Last Name *</label>
-                    <input type="text" id="coachLastName" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="coachEmail">
-                </div>
-                <div class="form-group">
-                    <label>Bio</label>
-                    <textarea id="coachBio" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Profile Image URL</label>
-                    <input type="url" id="coachProfileImage">
-                </div>
-                <div class="form-group">
-                    <label>Phone Number</label>
-                    <input type="tel" id="coachPhone">
-                </div>
-                <div class="form-group">
-                    <label>Website URL</label>
-                    <input type="url" id="coachWebsite">
-                </div>
-                <div class="form-group">
-                    <label>LinkedIn URL</label>
-                    <input type="url" id="coachLinkedIn">
-                </div>
-                <div class="form-group">
-                    <label>Book a Call Link</label>
-                    <input type="url" id="coachBookCall">
-                    <small>Link to calendar booking or contact form</small>
-                </div>
-                <div class="form-group">
-                    <label>Gender</label>
-                    <select id="coachGender">
-                        <option value="">Select Gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                        <option value="prefer-not-to-say">Prefer not to say</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Join Date</label>
-                    <input type="date" id="coachJoinDate" value="1999-01-01">
-                    <small>Leave as default if unknown</small>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save Coach</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('coachModal')">Cancel</button>
-                </div>
-            </form>
+            </div>
+            <div class="modal-footer">
+                <button id="applyColumns" class="btn btn-primary">Apply</button>
+            </div>
         </div>
     </div>
 
-    <div id="winModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Add/Edit Win</h2>
-            <form id="winForm">
-                <input type="hidden" id="winId">
-                <div class="form-group">
-                    <label>Coach *</label>
-                    <select id="winCoachId" required>
-                        <option value="">Select Coach</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Win Title *</label>
-                    <input type="text" id="winTitle" required>
-                </div>
-                <div class="form-group">
-                    <label>Win Description *</label>
-                    <textarea id="winDescription" rows="3" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Win Category *</label>
-                    <select id="winCategory" required>
-                        <option value="">Select Category</option>
-                        <option value="First Client">First Client</option>
-                        <option value="Revenue Milestone">Revenue Milestone</option>
-                        <option value="Breakthrough">Breakthrough</option>
-                        <option value="Client Success">Client Success</option>
-                        <option value="Business Growth">Business Growth</option>
-                        <option value="Personal Achievement">Personal Achievement</option>
-                        <option value="Impact Story">Impact Story</option>
-                        <option value="Certification">Certification</option>
-                        <option value="Award">Award</option>
-                        <option value="Recognition">Recognition</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Win Date *</label>
-                    <input type="date" id="winDate" required>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="winShowOnWall">
-                        Show on Public Wall
-                    </label>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save Win</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('winModal')">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="assetModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Add/Edit Asset</h2>
-            <form id="assetForm">
-                <input type="hidden" id="assetId">
-                <div class="form-group">
-                    <label>Win *</label>
-                    <select id="assetWinId" required>
-                        <option value="">Select Win</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Asset Type</label>
-                    <select id="assetType">
-                        <option value="">Select Type</option>
-                        <option value="Video Testimonial">Video Testimonial</option>
-                        <option value="Written Quote">Written Quote</option>
-                        <option value="Social Post">Social Post</option>
-                        <option value="Case Study">Case Study</option>
-                        <option value="Image">Image</option>
-                        <option value="Document">Document</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Asset Format</label>
-                    <select id="assetFormat">
-                        <option value="">Select Format</option>
-                        <option value="MP4">MP4 (Video)</option>
-                        <option value="Text">Text</option>
-                        <option value="Image">Image (JPG/PNG)</option>
-                        <option value="PDF">PDF</option>
-                        <option value="URL">URL/Link</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Asset Title *</label>
-                    <input type="text" id="assetTitle" required>
-                </div>
-                <div class="form-group">
-                    <label>Asset Description</label>
-                    <textarea id="assetDescription" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Asset URL/File Path</label>
-                    <input type="url" id="assetUrl">
-                    <small>Leave blank for text-only assets</small>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save Asset</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('assetModal')">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Embed Code Modal -->
-    <div id="embedModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('embedModal')">&times;</span>
-            <h2>Embed Code</h2>
-            <p>Copy this code to embed the proof wall on your website:</p>
-            <textarea id="embedCode" readonly></textarea>
-            <button id="copyEmbedBtn" class="btn btn-primary">Copy to Clipboard</button>
-        </div>
-    </div>
-
+    <!-- Firebase Config -->
     <script src="firebase-config.js"></script>
     <script src="admin.js"></script>
 </body>
