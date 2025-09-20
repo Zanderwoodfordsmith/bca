@@ -1,0 +1,6 @@
+asset_title,asset_description,asset_type,asset_url,win_id
+"Before and After Revenue Chart","Visual representation showing revenue growth from $50K to $150K monthly",image,https://example.com/revenue-chart.jpg,win_id_here
+"Client Testimonial Video","5-minute video testimonial from CEO discussing transformation",video,https://example.com/testimonial.mp4,win_id_here
+"Case Study Document","Detailed 10-page case study documenting the entire process",document,https://example.com/case-study.pdf,win_id_here
+"Team Photo","Photo of the newly built high-performing team",image,https://example.com/team-photo.jpg,win_id_here
+"Success Metrics","Text summary of key performance indicators and results",text,,win_id_here

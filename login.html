@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Business Coach Academy Admin</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin-styles.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-auth-compat.js"></script>
+    <style>
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .login-header {
+            margin-bottom: 30px;
+        }
+        
+        .login-header h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .login-header p {
+            color: var(--text-light);
+            margin: 0;
+        }
+        
+        .google-signin-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 20px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .google-signin-btn:hover {
+            background: #3367d6;
+        }
+        
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .divider {
+            margin: 20px 0;
+            position: relative;
+            text-align: center;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border);
+        }
+        
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            color: var(--text-light);
+            font-size: 14px;
+        }
+        
+        .email-signin {
+            text-align: left;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(12, 82, 144, 0.1);
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            background: #0a4080;
+        }
+        
+        .btn-primary:disabled {
+            background: var(--text-light);
+            cursor: not-allowed;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #fcc;
+        }
+        
+        .loading {
+            display: none;
+        }
+        
+        .loading.show {
+            display: inline-block;
+        }
+        
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">
+        ← Back to Proof Wall
+    </a>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Admin Login</h1>
+                <p>Business Coach Academy</p>
+            </div>
+            
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            
+            <button id="googleSignInBtn" class="google-signin-btn">
+                <svg class="google-icon" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                <span>Sign in with Google</span>
+                <span class="loading" id="googleLoading">
+                    <span class="spinner"></span>
+                    Signing in...
+                </span>
+            </button>
+            
+            <div class="divider">
+                <span>or</span>
+            </div>
+            
+            <form id="emailSignInForm" class="email-signin">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="your@businesscoachacademy.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" id="emailSignInBtn">
+                    <span>Sign In</span>
+                    <span class="loading" id="emailLoading">
+                        <span class="spinner"></span>
+                        Signing in...
+                    </span>
+                </button>
+            </form>
+            
+            <div style="margin-top: 20px; font-size: 14px; color: var(--text-light);">
+                <p>Need access? Contact your admin to get invited to the team.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="firebase-config.js"></script>
+    <script>
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        // Get DOM elements
+        const googleSignInBtn = document.getElementById('googleSignInBtn');
+        const googleLoading = document.getElementById('googleLoading');
+        const emailSignInBtn = document.getElementById('emailSignInBtn');
+        const emailLoading = document.getElementById('emailLoading');
+        const emailForm = document.getElementById('emailSignInForm');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        // Google Sign-In
+        googleSignInBtn.addEventListener('click', async () => {
+            try {
+                googleSignInBtn.disabled = true;
+                googleLoading.classList.add('show');
+                googleSignInBtn.querySelector('span:not(.loading)').style.display = 'none';
+                
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.setCustomParameters({
+                    hd: 'businesscoachacademy.com' // Restrict to your domain
+                });
+                
+                const result = await auth.signInWithPopup(provider);
+                console.log('Google sign-in successful:', result.user);
+                
+                // Check if user is authorized
+                await checkUserAuthorization(result.user);
+                
+            } catch (error) {
+                console.error('Google sign-in error:', error);
+                showError(getErrorMessage(error));
+            } finally {
+                googleSignInBtn.disabled = false;
+                googleLoading.classList.remove('show');
+                googleSignInBtn.querySelector('span:not(.loading)').style.display = 'inline';
+            }
+        });
+        
+        // Email/Password Sign-In
+        emailForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                emailSignInBtn.disabled = true;
+                emailLoading.classList.add('show');
+                emailSignInBtn.querySelector('span:not(.loading)').style.display = 'none';
+                
+                const result = await auth.signInWithEmailAndPassword(email, password);
+                console.log('Email sign-in successful:', result.user);
+                
+                // Check if user is authorized
+                await checkUserAuthorization(result.user);
+                
+            } catch (error) {
+                console.error('Email sign-in error:', error);
+                showError(getErrorMessage(error));
+            } finally {
+                emailSignInBtn.disabled = false;
+                emailLoading.classList.remove('show');
+                emailSignInBtn.querySelector('span:not(.loading)').style.display = 'inline';
+            }
+        });
+        
+        // Check if user is authorized to access admin panel
+        async function checkUserAuthorization(user) {
+            try {
+                const userDoc = await db.collection('admin_users').doc(user.uid).get();
+                
+                if (userDoc.exists) {
+                    // User is authorized, redirect to admin panel
+                    window.location.href = 'admin.html';
+                } else {
+                    // User is not authorized
+                    await auth.signOut();
+                    showError('You are not authorized to access the admin panel. Please contact your administrator.');
+                }
+            } catch (error) {
+                console.error('Authorization check error:', error);
+                await auth.signOut();
+                showError('Error checking authorization. Please try again.');
+            }
+        }
+        
+        // Listen for auth state changes
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in, check authorization
+                checkUserAuthorization(user);
+            }
+        });
+        
+        // Helper functions
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+        
+        function getErrorMessage(error) {
+            switch (error.code) {
+                case 'auth/user-not-found':
+                    return 'No account found with this email address.';
+                case 'auth/wrong-password':
+                    return 'Incorrect password. Please try again.';
+                case 'auth/invalid-email':
+                    return 'Invalid email address.';
+                case 'auth/user-disabled':
+                    return 'This account has been disabled.';
+                case 'auth/too-many-requests':
+                    return 'Too many failed attempts. Please try again later.';
+                case 'auth/popup-closed-by-user':
+                    return 'Sign-in popup was closed. Please try again.';
+                case 'auth/cancelled-popup-request':
+                    return 'Sign-in was cancelled. Please try again.';
+                default:
+                    return 'An error occurred during sign-in. Please try again.';
+            }
+        }
+    </script>
+</body>
+</html>
