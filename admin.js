@@ -3,7 +3,7 @@ class AdminPanel {
         console.log('AdminPanel starting...');
         this.coaches = [];
         this.wins = [];
-        this.assets = [];
+        this.proof_assets = [];
         this.currentSection = 'coaches';
         this.searchTerm = '';
         
@@ -131,7 +131,7 @@ class AdminPanel {
             await Promise.all([
                 this.loadCoaches(),
                 this.loadWins(),
-                this.loadAssets()
+                this.loadProofAssets()
             ]);
             console.log('All data loaded');
             this.renderCurrentSection();
@@ -146,7 +146,7 @@ class AdminPanel {
                 { id: '1', coach_id: '1', win_title: 'Sample Win 1', win_date: { seconds: Date.now() / 1000 } },
                 { id: '2', coach_id: '2', win_title: 'Sample Win 2', win_date: { seconds: Date.now() / 1000 } }
             ];
-            this.assets = [];
+            this.proof_assets = [];
             this.renderCurrentSection();
         }
     }
@@ -173,13 +173,13 @@ class AdminPanel {
         }
     }
 
-    async loadAssets() {
+    async loadProofAssets() {
         try {
             const snapshot = await this.db.collection('proof_assets').get();
-            this.assets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            console.log('Assets loaded:', this.assets.length);
+            this.proof_assets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log('Proof assets loaded:', this.proof_assets.length);
         } catch (error) {
-            console.error('Error loading assets:', error);
+            console.error('Error loading proof assets:', error);
             throw error;
         }
     }
@@ -338,7 +338,11 @@ class AdminPanel {
                     <input type="checkbox" class="row-checkbox" data-id="${win.id}">
                 </td>
                 <td class="col-coach">${coachName}</td>
-                <td class="col-title">${win.win_title || 'Untitled'}</td>
+                <td class="col-title">
+                    <div class="win-title">${win.win_title || 'Untitled'}</div>
+                    <div class="win-category">${win.win_category || 'Uncategorized'}</div>
+                    <div class="win-description">${win.win_description || 'No description provided'}</div>
+                </td>
                 <td class="col-date">${this.formatDate(win.win_date)}</td>
             </tr>
             `;
@@ -550,7 +554,7 @@ class AdminPanel {
                         </thead>
                         <tbody>
                             ${coachWins.map(win => {
-                                const linkedAssets = this.assets.filter(asset => asset.win_id === win.id);
+                                const linkedAssets = this.proof_assets.filter(asset => asset.win_id === win.id);
                                 return `
                                 <tr style="border-bottom: 1px solid #f3f4f6; cursor: pointer;" onclick="adminPanel.showWinDetail('${win.id}')">
                                     <td style="padding: 12px 16px; color: #1f2937; font-weight: 500;">${win.win_title || 'Untitled'}</td>
@@ -597,7 +601,7 @@ class AdminPanel {
             padding: 20px;
         `;
         
-        const linkedAssets = this.assets.filter(asset => asset.win_id === winId);
+        const linkedAssets = this.proof_assets.filter(asset => asset.win_id === winId);
         
         detailPage.innerHTML = `
             <div style="position: absolute; top: 20px; right: 20px;">
@@ -619,7 +623,12 @@ class AdminPanel {
                 </div>
             </div>
             
-            <h2 style="margin-bottom: 20px; color: #1f2937;">Assets (${linkedAssets.length})</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; color: #1f2937;">Assets (${linkedAssets.length})</h2>
+                <button onclick="adminPanel.showAddAssetModal('${winId}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    + Add Asset
+                </button>
+            </div>
             ${linkedAssets.length === 0 ? 
                 '<p style="color: #6b7280;">No assets found</p>' :
                 `
@@ -648,6 +657,129 @@ class AdminPanel {
         `;
         
         document.body.appendChild(detailPage);
+    }
+
+    showAddAssetModal(winId) {
+        console.log('Showing add asset modal for win:', winId);
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.id = 'addAssetModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 8px; padding: 30px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #1f2937;">Add Asset to Win</h3>
+                    <button onclick="adminPanel.closeAddAssetModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">×</button>
+                </div>
+                
+                <form id="addAssetForm">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Asset Title *</label>
+                        <input type="text" id="assetTitle" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Asset Type *</label>
+                        <select id="assetType" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <option value="">Select Type</option>
+                            <option value="Video Testimonial">Video Testimonial</option>
+                            <option value="Social Post">Social Post</option>
+                            <option value="Case Study">Case Study</option>
+                            <option value="Written Quote">Written Quote</option>
+                            <option value="Image">Image</option>
+                            <option value="Document">Document</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Asset URL</label>
+                        <input type="url" id="assetUrl" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" placeholder="https://example.com/asset">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Description</label>
+                        <textarea id="assetDescription" rows="3" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;" placeholder="Describe the asset..."></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" onclick="adminPanel.closeAddAssetModal()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                            Cancel
+                        </button>
+                        <button type="submit" style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                            Add Asset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Handle form submission
+        document.getElementById('addAssetForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.addAsset(winId);
+        });
+    }
+
+    closeAddAssetModal() {
+        const modal = document.getElementById('addAssetModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    async addAsset(winId) {
+        const title = document.getElementById('assetTitle').value;
+        const type = document.getElementById('assetType').value;
+        const url = document.getElementById('assetUrl').value;
+        const description = document.getElementById('assetDescription').value;
+        
+        if (!title || !type) {
+            alert('Please fill in required fields');
+            return;
+        }
+        
+        try {
+            const assetData = {
+                win_id: winId,
+                asset_title: title,
+                asset_type: type,
+                asset_url: url || '',
+                asset_description: description || '',
+                created_at: new Date()
+            };
+            
+            await this.db.collection('proof_assets').add(assetData);
+            
+            // Refresh the data
+            await this.loadProofAssets();
+            
+            // Close modal
+            this.closeAddAssetModal();
+            
+            // Refresh the win detail view
+            this.showWinDetail(winId);
+            
+            console.log('Asset added successfully');
+        } catch (error) {
+            console.error('Error adding asset:', error);
+            alert('Failed to add asset. Please try again.');
+        }
     }
 
     showMainView() {
