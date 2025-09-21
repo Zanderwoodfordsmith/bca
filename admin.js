@@ -35,6 +35,10 @@ class AdminPanel {
         this.applyColumns = document.getElementById('applyColumns');
         this.viewProofWall = document.getElementById('viewProofWall');
         this.addCoachBtn = document.getElementById('addCoachBtn');
+        
+        // Select all checkboxes
+        this.selectAllCoaches = document.getElementById('selectAllCoaches');
+        this.selectAllWins = document.getElementById('selectAllWins');
     }
 
     bindEvents() {
@@ -56,6 +60,10 @@ class AdminPanel {
         // Other buttons
         this.viewProofWall.addEventListener('click', () => this.viewProofWall());
         this.addCoachBtn.addEventListener('click', () => this.addCoach());
+        
+        // Select all checkboxes
+        this.selectAllCoaches.addEventListener('change', (e) => this.toggleSelectAll('coaches', e.target.checked));
+        this.selectAllWins.addEventListener('change', (e) => this.toggleSelectAll('wins', e.target.checked));
         
         // Close modal when clicking outside
         window.addEventListener('click', (e) => {
@@ -102,8 +110,33 @@ class AdminPanel {
             checkbox.checked = false;
         });
         
+        // Reset select all checkboxes
+        if (this.selectAllCoaches) {
+            this.selectAllCoaches.checked = false;
+        }
+        if (this.selectAllWins) {
+            this.selectAllWins.checked = false;
+        }
+        
         // Close any open modals
         this.closeColumnModal();
+    }
+
+    toggleSelectAll(section, checked) {
+        console.log(`Toggling select all for ${section}:`, checked);
+        
+        let checkboxes;
+        if (section === 'coaches') {
+            checkboxes = document.querySelectorAll('#coachesSection .row-checkbox');
+        } else if (section === 'wins') {
+            checkboxes = document.querySelectorAll('#winsSection .row-checkbox');
+        }
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+        
+        console.log(`Updated ${checkboxes.length} checkboxes for ${section}`);
     }
 
     closeDetailViews() {

@@ -407,3 +407,19 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
 }
+
+/* Select All Checkbox Styles */
+.select-all-checkbox {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.checkbox-col {
+    width: 50px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.checkbox-col input[type="checkbox"] {
+    cursor: pointer;
+}
