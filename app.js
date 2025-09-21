@@ -117,8 +117,8 @@ class ProofWall {
                 const coachData = { id: coachDoc.id, ...coachDoc.data() };
                 console.log('✅ Found coach:', coachData);
                 
-                // Fetch all assets for this win (no asset-level approval needed)
-                console.log('📎 Looking for assets for win ID:', winDoc.id);
+                // Fetch all proof assets for this win (no asset-level approval needed)
+                console.log('📎 Looking for proof assets for win ID:', winDoc.id);
                 const assetsQuery = db.collection('proof_assets').where('win_id', '==', winDoc.id);
                 
                 const assetsSnapshot = await assetsQuery.get();
@@ -254,7 +254,11 @@ class ProofWall {
         const joinDate = coach.join_date ? new Date(coach.join_date.seconds ? coach.join_date.seconds * 1000 : coach.join_date) : null;
         const isValidJoinDate = joinDate && joinDate.getFullYear() > 2000; // Not the default 1999 date
         
-        const winDate = win.win_date ? new Date(win.win_date.seconds ? win.win_date.seconds * 1000 : win.win_date).toLocaleDateString() : 'Date needed';
+        const winDate = win.win_date ? new Date(win.win_date.seconds ? win.win_date.seconds * 1000 : win.win_date).toLocaleDateString('en-GB', { 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric' 
+        }) : 'Date needed';
         
         // Enhanced asset display - show all assets with better formatting
         const assetContent = assets.length > 0 ? `
@@ -276,12 +280,66 @@ class ProofWall {
                         if (asset.asset_url && asset.asset_url.trim() !== '') {
                             switch (asset.asset_type) {
                                 case 'Video Testimonial':
-                                    assetHTML += `<div class="asset-media">
-                                        <video controls style="width: 100%; max-width: 400px; border-radius: 8px;">
-                                            <source src="${asset.asset_url}" type="video/mp4">
-                                            Video testimonial available
-                                        </video>
-                                    </div>`;
+                                    // Determine video type based on URL extension
+                                    const videoUrl = asset.asset_url;
+                                    const videoExtension = videoUrl.split('.').pop().toLowerCase();
+                                    let videoType = 'video/mp4'; // default
+                                    
+                                    if (videoExtension === 'webm') videoType = 'video/webm';
+                                    else if (videoExtension === 'mov') videoType = 'video/quicktime';
+                                    else if (videoExtension === 'avi') videoType = 'video/x-msvideo';
+                                    else if (videoExtension === 'wmv') videoType = 'video/x-ms-wmv';
+                                    
+                                    // Check if it's a YouTube or Vimeo URL
+                                    const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+                                    const isVimeo = videoUrl.includes('vimeo.com');
+                                    
+                                    if (isYouTube) {
+                                        // Extract YouTube video ID
+                                        const youtubeId = videoUrl.includes('youtu.be') 
+                                            ? videoUrl.split('youtu.be/')[1]?.split('?')[0]
+                                            : videoUrl.split('v=')[1]?.split('&')[0];
+                                        
+                                        if (youtubeId) {
+                                            assetHTML += `<div class="asset-media">
+                                                <iframe width="100%" height="225" 
+                                                    src="https://www.youtube.com/embed/${youtubeId}" 
+                                                    frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                                    allowfullscreen style="border-radius: 8px; max-width: 400px;">
+                                                </iframe>
+                                            </div>`;
+                                        } else {
+                                            assetHTML += `<div class="asset-media">
+                                                <a href="${videoUrl}" target="_blank" class="video-link">🎥 Watch Video on YouTube</a>
+                                            </div>`;
+                                        }
+                                    } else if (isVimeo) {
+                                        // Extract Vimeo video ID
+                                        const vimeoId = videoUrl.split('vimeo.com/')[1]?.split('?')[0];
+                                        
+                                        if (vimeoId) {
+                                            assetHTML += `<div class="asset-media">
+                                                <iframe width="100%" height="225" 
+                                                    src="https://player.vimeo.com/video/${vimeoId}" 
+                                                    frameborder="0" allow="autoplay; fullscreen; picture-in-picture" 
+                                                    allowfullscreen style="border-radius: 8px; max-width: 400px;">
+                                                </iframe>
+                                            </div>`;
+                                        } else {
+                                            assetHTML += `<div class="asset-media">
+                                                <a href="${videoUrl}" target="_blank" class="video-link">🎥 Watch Video on Vimeo</a>
+                                            </div>`;
+                                        }
+                                    } else {
+                                        // Direct video file
+                                        assetHTML += `<div class="asset-media">
+                                            <video controls preload="metadata" style="width: 100%; max-width: 400px; border-radius: 8px;">
+                                                <source src="${videoUrl}" type="${videoType}">
+                                                <source src="${videoUrl}" type="video/mp4">
+                                                <p>Your browser doesn't support HTML5 video. <a href="${videoUrl}" target="_blank">Download the video</a> instead.</p>
+                                            </video>
+                                        </div>`;
+                                    }
                                     break;
                                 case 'Social Post':
                                     assetHTML += `<div class="asset-media">
@@ -326,7 +384,11 @@ class ProofWall {
                     <div class="coach-avatar">${initials}</div>
                     <div class="coach-info">
                         <h3>${coach.first_name} ${coach.last_name}</h3>
-                        ${isValidJoinDate ? `<div class="join-date">Member since ${joinDate.toLocaleDateString()}</div>` : ''}
+                        ${isValidJoinDate ? `<div class="join-date">Member since ${joinDate.toLocaleDateString('en-GB', { 
+                            day: 'numeric', 
+                            month: 'short', 
+                            year: 'numeric' 
+                        })}</div>` : ''}
                     </div>
                 </div>
                 

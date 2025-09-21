@@ -27,6 +27,10 @@
                     <span class="nav-icon">🏆</span>
                     <span class="nav-label">Wins</span>
                 </button>
+                <button id="settingsTab" class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-label">Settings</span>
+                </button>
             </nav>
             <div class="sidebar-footer">
                 <button id="viewProofWall" class="btn btn-primary">View Proof Wall</button>
@@ -46,10 +50,26 @@
                     <span class="search-icon">🔍</span>
                     <input type="text" id="searchInput" placeholder="Search...">
                 </div>
-                <div class="table-controls">
+                <div class="table-controls" id="coachesControls">
                     <button id="groupByBtn" class="btn btn-secondary">Group by...</button>
                     <button id="columnToggleBtn" class="btn btn-secondary">Columns</button>
                     <button id="addCoachBtn" class="btn btn-primary">Add Coach</button>
+                </div>
+                <div class="table-controls" id="winsControls" style="display: none;">
+                    <button id="winsGroupByBtn" class="btn btn-secondary">Group by...</button>
+                    <button id="winsColumnToggleBtn" class="btn btn-secondary">Columns</button>
+                    <button id="addWinBtn" class="btn btn-primary">Add Win</button>
+                </div>
+            </div>
+
+            <!-- Bulk Actions Bar -->
+            <div id="bulkActionsBar" class="bulk-actions-bar" style="display: none;">
+                <div class="bulk-actions-content">
+                    <span id="selectedCount" class="selected-count">0 coaches selected</span>
+                    <div class="bulk-actions-buttons">
+                        <button id="bulkDeleteBtn" class="btn btn-danger">Delete Selected</button>
+                        <button id="clearSelectionBtn" class="btn btn-secondary">Clear Selection</button>
+                    </div>
                 </div>
             </div>
 
@@ -90,13 +110,28 @@
                                 </th>
                                 <th class="col-coach">Coach</th>
                                 <th class="col-title">Title</th>
+                                <th class="col-category" style="display: none;">Category</th>
+                                <th class="col-description" style="display: none;">Description</th>
                                 <th class="col-date">Date</th>
+                                <th class="col-created" style="display: none;">Created</th>
                             </tr>
                         </thead>
                         <tbody id="winsTableBody">
                             <tr><td colspan="4" class="loading">Loading wins...</td></tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settingsSection" class="admin-section">
+                <div class="settings-content">
+                    <h2>Settings</h2>
+                    <div class="settings-group">
+                        <h3>Data Management</h3>
+                        <button id="importCoachesBtn" class="btn btn-primary">Import Coaches CSV</button>
+                        <p class="settings-description">Import coaches from a CSV file with the required format.</p>
+                    </div>
                 </div>
             </div>
 
@@ -124,6 +159,100 @@
             </div>
             <div class="modal-footer">
                 <button id="applyColumns" class="btn btn-primary">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV Import Modal -->
+    <div id="csvImportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Import Coaches from CSV</h3>
+                <button id="closeCsvImportModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-instructions">
+                    <h4>CSV Format Requirements:</h4>
+                    <p>Your CSV file should have the following columns (in any order):</p>
+                    <ul>
+                        <li><strong>first_name</strong> - Coach's first name (required)</li>
+                        <li><strong>last_name</strong> - Coach's last name (required)</li>
+                        <li><strong>email</strong> - Email address (optional)</li>
+                        <li><strong>bio</strong> - Bio/description (optional)</li>
+                        <li><strong>profile_image</strong> - Profile image URL (optional)</li>
+                        <li><strong>phone</strong> - Phone number (optional)</li>
+                        <li><strong>website</strong> - Website URL (optional)</li>
+                        <li><strong>linkedin_url</strong> - LinkedIn profile URL (optional)</li>
+                        <li><strong>book_call_url</strong> - Book a call URL (optional)</li>
+                        <li><strong>gender</strong> - Gender (optional)</li>
+                        <li><strong>join_date</strong> - Join date in YYYY-MM-DD format (optional)</li>
+                    </ul>
+                </div>
+                <div class="file-upload-area">
+                    <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                    <div id="fileDropZone" class="file-drop-zone">
+                        <div class="drop-zone-content">
+                            <span class="drop-zone-icon">📁</span>
+                            <p>Click to select CSV file or drag and drop here</p>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('csvFileInput').click()">
+                                Choose File
+                            </button>
+                        </div>
+                    </div>
+                    <div id="selectedFileName" class="selected-file" style="display: none;"></div>
+                </div>
+                <div id="importPreview" class="import-preview" style="display: none;">
+                    <h4>Preview (first 5 rows):</h4>
+                    <div id="previewTable"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelImport" class="btn btn-secondary">Cancel</button>
+                <button id="confirmImport" class="btn btn-primary" disabled>Import Coaches</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wins Columns Modal -->
+    <div id="winsColumnModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Select Win Columns</h3>
+                <button id="closeWinsColumnModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="column-options">
+                    <label><input type="checkbox" checked data-column="coach"> Coach</label>
+                    <label><input type="checkbox" checked data-column="title"> Title</label>
+                    <label><input type="checkbox" checked data-column="date"> Date</label>
+                    <label><input type="checkbox" data-column="category"> Category</label>
+                    <label><input type="checkbox" data-column="description"> Description</label>
+                    <label><input type="checkbox" data-column="created"> Created</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="applyWinsColumns" class="btn btn-primary">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group By Modal -->
+    <div id="groupByModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Group By</h3>
+                <button id="closeGroupByModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="group-options">
+                    <label><input type="radio" name="groupBy" value="none" checked> No Grouping</label>
+                    <label><input type="radio" name="groupBy" value="gender"> Gender</label>
+                    <label><input type="radio" name="groupBy" value="join_date"> Join Date</label>
+                    <label><input type="radio" name="groupBy" value="wins_count"> Wins Count</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="applyGroupBy" class="btn btn-primary">Apply</button>
             </div>
         </div>
     </div>
