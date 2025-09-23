@@ -1,6 +1,6 @@
 class AdminPanel {
     constructor() {
-        console.log('AdminPanel starting...');
+        console.log('AdminPanel starting... v2.1');
         this.coaches = [];
         this.wins = [];
         this.proof_assets = [];
