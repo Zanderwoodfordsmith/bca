@@ -49,8 +49,13 @@ Proof Wall/
 - `win_date`
 - `win_category` (e.g., "First Client", "Revenue Milestone", "Breakthrough")
 - `verification_status` (verified/pending/unverified)
+- `media_type` (e.g., "Video", "Written", "Interview", "Screenshot", "Image", "Audio")
+- `media_url` (file path or URL)
+- `media_title` (optional title for the media)
+- `media_description` (optional description for the media)
+- `media_format` (e.g., "MP4", "Text", "Image", "PDF", "Audio")
 
-### proof_assets
+### proof_assets (Legacy - can be removed after migration)
 - `asset_id` (primary key)
 - `win_id` (foreign key)
 - `asset_type` (e.g., "Video Testimonial", "Written Quote", "Social Post", "Case Study")
@@ -119,3 +124,73 @@ This project is open source and available under the MIT License.
 ## Support
 
 If you need help with setup or customization, check the `FIREBASE_SETUP.md` file for detailed instructions and troubleshooting tips.
+
+
+
+## Firebase Database Migration
+
+### Migration from proof_assets to wins media fields
+
+To implement the new simplified media structure, you need to migrate your Firebase data:
+
+#### Step 1: Add new fields to wins collection
+For each document in your `wins` collection, add these new fields:
+- `media_type` (string): "Video", "Written", "Interview", "Screenshot", "Image", "Audio", etc.
+- `media_url` (string): URL or file path to the media
+- `media_title` (string, optional): Title for the media
+- `media_description` (string, optional): Description for the media  
+- `media_format` (string): "MP4", "Text", "Image", "PDF", "Audio", etc.
+
+#### Step 2: Migrate existing proof_assets data
+You can use a Firebase script or manually copy data from `proof_assets` collection to the corresponding `wins` documents:
+- Copy `asset_type` → `media_type`
+- Copy `asset_url` → `media_url`
+- Copy `asset_title` → `media_title`
+- Copy `asset_description` → `media_description`
+- Copy `asset_format` → `media_format`
+
+#### Step 3: Update Firestore security rules (if needed)
+Ensure your security rules allow writing to the new media fields in wins documents.
+
+#### Step 4: Test the application
+After migration, test that the proof wall displays media correctly and the admin panel can edit media fields.
+
+#### Step 5: Remove proof_assets collection (optional)
+Once you've confirmed everything works, you can delete the `proof_assets` collection to clean up your database.
+
+##Improvements
+
+###Issues
+Make sure table displays properly after selecting other columns wins (might be when updating), when i added type and category column the category column went before data but the dates stayed aligned to the category column.  
+####Data infrastructure
+✅ Make wins have their own media, doesn't have to be part of proof assets for simplicity, Update database and tell me what to change in firebase
+
+
+
+###Admin
+
+#####Coaches
+1. Add filter to coaches; Filter by Number of wins (more or less than), join date, most recent win (Shoudl be able to do before or after), type of win (so it would look at which couches don't have e.g. video)
+2. Remove group by button and functiomality
+
+
+#####Single Coaches Page
+
+
+####Wins
+
+#####Wins List
+1. Have win title be the first column and coach the second column
+2. When click on win title it open the win (do not need it to be blue or underlined
+3. By default show category e.g. 1st clients and type e.g. video
+3. Make sure table renders properly
+
+#####Single Win page
+1. Display the media 
+2. Allow for files to be uploaded and type e.g. video screenshot selected. 
+3. Show the content field 
+
+###Proof Wall
+- do not show the names of the files. 
+- add a keyword search
+- add a type search )this should filter by the new wins media type e.g. video, written, interview, screenshot,

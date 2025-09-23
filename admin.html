@@ -27,6 +27,10 @@
                     <span class="nav-icon">🏆</span>
                     <span class="nav-label">Wins</span>
                 </button>
+                <button id="mediaTab" class="nav-item">
+                    <span class="nav-icon">📎</span>
+                    <span class="nav-label">Media</span>
+                </button>
                 <button id="settingsTab" class="nav-item">
                     <span class="nav-icon">⚙️</span>
                     <span class="nav-label">Settings</span>
@@ -50,15 +54,115 @@
                     <span class="search-icon">🔍</span>
                     <input type="text" id="searchInput" placeholder="Search...">
                 </div>
+                
+                <!-- Advanced Filters for Coaches -->
+                <div class="advanced-filters" id="coachesFilters" style="display: none;">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Number of Wins:</label>
+                            <select id="winsCountFilter">
+                                <option value="">All</option>
+                                <option value="0">0 wins</option>
+                                <option value="1">1 win</option>
+                                <option value="2-5">2-5 wins</option>
+                                <option value="6-10">6-10 wins</option>
+                                <option value="10+">10+ wins</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Join Date:</label>
+                            <select id="joinDateFilter">
+                                <option value="">All</option>
+                                <option value="last-week">Last Week</option>
+                                <option value="last-month">Last Month</option>
+                                <option value="last-3-months">Last 3 Months</option>
+                                <option value="last-year">Last Year</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Most Recent Win:</label>
+                            <select id="recentWinFilter">
+                                <option value="">All</option>
+                                <option value="last-week">Last Week</option>
+                                <option value="last-month">Last Month</option>
+                                <option value="last-3-months">Last 3 Months</option>
+                                <option value="last-year">Last Year</option>
+                                <option value="no-wins">No Wins</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Media Type:</label>
+                            <select id="coachMediaTypeFilter">
+                                <option value="">All</option>
+                                <option value="Video">Has Video</option>
+                                <option value="Written">Has Written</option>
+                                <option value="Interview">Has Interview</option>
+                                <option value="Screenshot">Has Screenshot</option>
+                                <option value="Image">Has Image</option>
+                                <option value="Audio">Has Audio</option>
+                                <option value="no-media">No Media</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Advanced Filters for Media -->
+                <div class="advanced-filters" id="mediaFilters" style="display: none;">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Type:</label>
+                            <select id="mediaTypeFilter">
+                                <option value="">All</option>
+                                <option value="Video">Video</option>
+                                <option value="Screenshot">Screenshot</option>
+                                <option value="Written">Written</option>
+                                <option value="Audio">Audio</option>
+                                <option value="Image">Image</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Platform:</label>
+                            <select id="mediaPlatformFilter">
+                                <option value="">All</option>
+                                <option value="YouTube">YouTube</option>
+                                <option value="Firebase Storage">Firebase Storage</option>
+                                <option value="Database">Database</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Assignment:</label>
+                            <select id="mediaAssignmentFilter">
+                                <option value="">All</option>
+                                <option value="assigned">Assigned to Win</option>
+                                <option value="unassigned">Unassigned</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="table-controls" id="coachesControls">
-                    <button id="groupByBtn" class="btn btn-secondary">Group by...</button>
+                    <button id="toggleFiltersBtn" class="btn btn-secondary">Filters</button>
                     <button id="columnToggleBtn" class="btn btn-secondary">Columns</button>
+                    <select id="coachesSortSelect" class="btn btn-secondary" style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; background: white; margin-right: 8px;">
+                        <option value="">Sort by...</option>
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                        <option value="wins-asc">Wins (Low to High)</option>
+                        <option value="wins-desc">Wins (High to Low)</option>
+                        <option value="recent-win-asc">Recent Win (Oldest)</option>
+                        <option value="recent-win-desc">Recent Win (Newest)</option>
+                    </select>
                     <button id="addCoachBtn" class="btn btn-primary">Add Coach</button>
                 </div>
                 <div class="table-controls" id="winsControls" style="display: none;">
-                    <button id="winsGroupByBtn" class="btn btn-secondary">Group by...</button>
                     <button id="winsColumnToggleBtn" class="btn btn-secondary">Columns</button>
+                    <button id="bulkDeleteWinsBtn" class="btn btn-danger" style="display: none;">Delete Selected Wins</button>
                     <button id="addWinBtn" class="btn btn-primary">Add Win</button>
+                </div>
+                <div class="table-controls" id="mediaControls" style="display: none;">
+                    <button id="mediaColumnToggleBtn" class="btn btn-secondary">Columns</button>
+                    <button id="addMediaBtn" class="btn btn-primary">Add Media</button>
+                    <button id="bulkUploadBtn" class="btn btn-secondary">Bulk Upload Images</button>
                 </div>
             </div>
 
@@ -108,9 +212,10 @@
                                 <th class="checkbox-col">
                                     <input type="checkbox" id="selectAllWins" class="select-all-checkbox">
                                 </th>
-                                <th class="col-coach">Coach</th>
                                 <th class="col-title">Title</th>
-                                <th class="col-category" style="display: none;">Category</th>
+                                <th class="col-coach">Coach</th>
+                                <th class="col-category">Category</th>
+                                <th class="col-priority">Priority</th>
                                 <th class="col-description" style="display: none;">Description</th>
                                 <th class="col-date">Date</th>
                                 <th class="col-created" style="display: none;">Created</th>
@@ -118,6 +223,30 @@
                         </thead>
                         <tbody id="winsTableBody">
                             <tr><td colspan="4" class="loading">Loading wins...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Media Section -->
+            <div id="mediaSection" class="admin-section">
+                <div class="data-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="checkbox-col">
+                                    <input type="checkbox" id="selectAllMedia" class="select-all-checkbox">
+                                </th>
+                                <th class="col-title">Title</th>
+                                <th class="col-win">Win</th>
+                                <th class="col-type">Type</th>
+                                <th class="col-platform" style="display: none;">Platform</th>
+                                <th class="col-duration" style="display: none;">Duration</th>
+                                <th class="col-created" style="display: none;">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mediaTableBody">
+                            <tr><td colspan="4" class="loading">Loading media...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -131,6 +260,9 @@
                         <h3>Data Management</h3>
                         <button id="importCoachesBtn" class="btn btn-primary">Import Coaches CSV</button>
                         <p class="settings-description">Import coaches from a CSV file with the required format.</p>
+                        
+                        <button id="importWinsBtn" class="btn btn-primary" style="margin-top: 16px;">Import Wins CSV</button>
+                        <p class="settings-description">Import wins from a CSV file. Coach names will be looked up automatically.</p>
                     </div>
                 </div>
             </div>
@@ -213,6 +345,54 @@
         </div>
     </div>
 
+    <!-- Wins CSV Import Modal -->
+    <div id="winsCsvImportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Import Wins from CSV</h3>
+                <button id="closeWinsCsvImportModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-instructions">
+                    <h4>CSV Format Requirements:</h4>
+                    <p>Your CSV file should have the following columns (in any order):</p>
+                    <ul>
+                        <li><strong>win_title</strong> - Title of the win (required)</li>
+                        <li><strong>coach_name</strong> - Coach's first and last name (optional - can be blank)</li>
+                        <li><strong>win_description</strong> - Description of the win (optional)</li>
+                        <li><strong>win_category</strong> - Category of the win (optional)</li>
+                        <li><strong>win_date</strong> - Date in YYYY-MM-DD format (optional)</li>
+                        <li><strong>show_on_wall</strong> - true/false to show on proof wall (optional, defaults to true)</li>
+                        <li><strong>priority</strong> - Priority level: high, medium, or low (optional, can be blank)</li>
+                        <li><strong>win_status</strong> - Status of the win: verified, pending, or rejected (optional, defaults to pending)</li>
+                    </ul>
+                    <p><strong>Note:</strong> Only win_title is required. Coach names will be looked up automatically if provided. If no coach is specified or coach is not found, the win will be imported without a coach assignment.</p>
+                </div>
+                <div class="file-upload-area">
+                    <input type="file" id="winsCsvFileInput" accept=".csv" style="display: none;">
+                    <div id="winsFileDropZone" class="file-drop-zone">
+                        <div class="drop-zone-content">
+                            <span class="drop-zone-icon">📁</span>
+                            <p>Click to select CSV file or drag and drop here</p>
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('winsCsvFileInput').click()">
+                                Choose File
+                            </button>
+                        </div>
+                    </div>
+                    <div id="winsSelectedFileName" class="selected-file" style="display: none;"></div>
+                </div>
+                <div id="winsImportPreview" class="import-preview" style="display: none;">
+                    <h4>Preview (first 5 rows):</h4>
+                    <div id="winsPreviewTable"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelWinsImport" class="btn btn-secondary">Cancel</button>
+                <button id="confirmWinsImport" class="btn btn-primary" disabled>Import Wins</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Wins Columns Modal -->
     <div id="winsColumnModal" class="modal">
         <div class="modal-content">
@@ -222,10 +402,11 @@
             </div>
             <div class="modal-body">
                 <div class="column-options">
-                    <label><input type="checkbox" checked data-column="coach"> Coach</label>
                     <label><input type="checkbox" checked data-column="title"> Title</label>
+                    <label><input type="checkbox" checked data-column="coach"> Coach</label>
+                    <label><input type="checkbox" checked data-column="category"> Category</label>
+                    <label><input type="checkbox" checked data-column="priority"> Priority</label>
                     <label><input type="checkbox" checked data-column="date"> Date</label>
-                    <label><input type="checkbox" data-column="category"> Category</label>
                     <label><input type="checkbox" data-column="description"> Description</label>
                     <label><input type="checkbox" data-column="created"> Created</label>
                 </div>
@@ -236,23 +417,233 @@
         </div>
     </div>
 
-    <!-- Group By Modal -->
-    <div id="groupByModal" class="modal">
+    <!-- Media Columns Modal -->
+    <div id="mediaColumnModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Group By</h3>
-                <button id="closeGroupByModal" class="close-btn">&times;</button>
+                <h3>Select Columns</h3>
+                <span class="close" id="closeMediaColumnModal">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="group-options">
-                    <label><input type="radio" name="groupBy" value="none" checked> No Grouping</label>
-                    <label><input type="radio" name="groupBy" value="gender"> Gender</label>
-                    <label><input type="radio" name="groupBy" value="join_date"> Join Date</label>
-                    <label><input type="radio" name="groupBy" value="wins_count"> Wins Count</label>
+                <div class="column-options">
+                    <label><input type="checkbox" data-column="title" checked> Title</label>
+                    <label><input type="checkbox" data-column="win" checked> Win</label>
+                    <label><input type="checkbox" data-column="type" checked> Type</label>
+                    <label><input type="checkbox" data-column="platform"> Platform</label>
+                    <label><input type="checkbox" data-column="duration"> Duration</label>
+                    <label><input type="checkbox" data-column="created"> Created</label>
                 </div>
             </div>
             <div class="modal-footer">
-                <button id="applyGroupBy" class="btn btn-primary">Apply</button>
+                <button id="applyMediaColumns" class="btn btn-primary">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Media Modal -->
+    <div id="addMediaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Media</h3>
+                <span class="close" id="closeAddMediaModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addMediaForm">
+                    <div class="form-group">
+                        <label for="newMediaTitle">Title *</label>
+                        <input type="text" id="newMediaTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newMediaType">Type *</label>
+                        <select id="newMediaType" required>
+                            <option value="">Select Type</option>
+                            <option value="Video">Video</option>
+                            <option value="Screenshot">Screenshot</option>
+                            <option value="Written">Written</option>
+                            <option value="Audio">Audio</option>
+                            <option value="Image">Image</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newMediaPlatform">Platform</label>
+                        <select id="newMediaPlatform">
+                            <option value="">Select Platform</option>
+                            <option value="YouTube">YouTube</option>
+                            <option value="Firebase Storage">Firebase Storage</option>
+                            <option value="Database">Database</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="newMediaUrl">URL</label>
+                        <input type="url" id="newMediaUrl" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label for="newMediaDescription">Description</label>
+                        <textarea id="newMediaDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="newMediaContent">Content (for search)</label>
+                        <textarea id="newMediaContent" rows="4" placeholder="Full transcript, screenshot text, etc."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="newMediaWin">Assign to Win</label>
+                        <select id="newMediaWin">
+                            <option value="">Select Win (optional)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="saveNewMedia" class="btn btn-primary">Save Media</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Upload Modal -->
+    <div id="bulkUploadModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; width: 90%;">
+            <div class="modal-header">
+                <h3>Bulk Upload Images</h3>
+                <span class="close" id="closeBulkUploadModal">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label for="bulkImageFiles" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Select Images *</label>
+                    <div style="border: 2px dashed #d1d5db; border-radius: 8px; padding: 24px; text-align: center; background: #f9fafb; transition: border-color 0.2s;" 
+                         onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#d1d5db'">
+                        <input type="file" id="bulkImageFiles" multiple accept="image/*" required 
+                               style="width: 100%; padding: 12px; border: none; background: transparent; cursor: pointer;">
+                        <div style="margin-top: 8px; color: #6b7280; font-size: 14px;">
+                            📁 Click to select multiple images or drag and drop
+                        </div>
+                    </div>
+                    <small style="display: block; margin-top: 8px; color: #6b7280; font-size: 13px;">Images will be uploaded with filename as title</small>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="bulkImageType" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Type *</label>
+                    <select id="bulkImageType" required 
+                            style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; background: white; outline: none; transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+                        <option value="">Select Type</option>
+                        <option value="Screenshot">Screenshot</option>
+                        <option value="Image">Image</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="bulkImageWin" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Assign to Win</label>
+                    <select id="bulkImageWin" 
+                            style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; background: white; outline: none; transition: border-color 0.2s;"
+                            onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+                        <option value="">Select Win (optional)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="processBulkUpload" class="btn btn-primary" style="padding: 12px 24px; font-size: 16px; font-weight: 600;">Upload Images</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Win Selection Modal -->
+    <div id="winSelectionModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; width: 90%;">
+            <div class="modal-header">
+                <h3>Assign Media to Win</h3>
+                <span class="close" id="closeWinSelectionModal">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Search Wins</label>
+                    <div style="position: relative;">
+                        <input type="text" id="winSearchInput" placeholder="Search by win title or coach name..." 
+                               style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; outline: none;"
+                               onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+                        <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;">🔍</span>
+                    </div>
+                </div>
+                <div class="wins-list" id="winsList" style="max-height: 400px; overflow-y: auto; border: 2px solid #e5e7eb; border-radius: 8px; background: #f9fafb;">
+                    <!-- Wins will be populated here -->
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="unassignMediaFromWin" class="btn btn-secondary" style="padding: 10px 20px; font-size: 14px;">Unassign</button>
+                <button id="assignMediaToWin" class="btn btn-primary" disabled style="padding: 10px 20px; font-size: 14px;">Assign to Selected Win</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Media Modal -->
+    <div id="editMediaModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; width: 90%;">
+            <div class="modal-header">
+                <h3>Edit Media</h3>
+                <span class="close" id="closeEditMediaModal">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <form id="editMediaForm">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="editMediaTitle" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Title *</label>
+                        <input type="text" id="editMediaTitle" required 
+                               style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; outline: none;"
+                               onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="editMediaType" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Type *</label>
+                        <select id="editMediaType" required 
+                                style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; background: white; outline: none; transition: border-color 0.2s;"
+                                onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+                            <option value="">Select Type</option>
+                            <option value="Video">Video</option>
+                            <option value="Screenshot">Screenshot</option>
+                            <option value="Written">Written</option>
+                            <option value="Audio">Audio</option>
+                            <option value="Image">Image</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="editMediaPlatform" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Platform</label>
+                        <select id="editMediaPlatform" 
+                                style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; background: white; outline: none; transition: border-color 0.2s;"
+                                onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+                            <option value="">Select Platform</option>
+                            <option value="YouTube">YouTube</option>
+                            <option value="Firebase Storage">Firebase Storage</option>
+                            <option value="Database">Database</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="editMediaUrl" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">URL</label>
+                        <input type="url" id="editMediaUrl" placeholder="https://..." 
+                               style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; outline: none;"
+                               onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="editMediaDescription" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Description</label>
+                        <textarea id="editMediaDescription" rows="3" 
+                                  style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; outline: none; resize: vertical;"
+                                  onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="editMediaContent" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Content (for search)</label>
+                        <textarea id="editMediaContent" rows="4" placeholder="Full transcript, screenshot text, etc." 
+                                  style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; outline: none; resize: vertical;"
+                                  onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="editMediaWin" style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Assign to Win</label>
+                        <select id="editMediaWin" 
+                                style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; background: white; outline: none; transition: border-color 0.2s;"
+                                onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+                            <option value="">Select Win (optional)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="deleteMedia" class="btn btn-danger" style="padding: 10px 20px; font-size: 14px; background: #ef4444; border: none;">Delete Media</button>
+                <button id="saveEditMedia" class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;">Save Changes</button>
             </div>
         </div>
     </div>

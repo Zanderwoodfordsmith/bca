@@ -26,41 +26,65 @@
             </a>
         </div>
 
-        <!-- Filters -->
-        <div class="filters">
-            <div class="filter-group">
-                <label>Category:</label>
-                <select id="categoryFilter">
-                    <option value="">All Categories</option>
-                    <option value="First Client">First Client</option>
-                    <option value="Revenue Milestone">Revenue Milestone</option>
-                    <option value="Breakthrough">Breakthrough</option>
-                    <option value="Client Success">Client Success</option>
-                    <option value="Business Growth">Business Growth</option>
-                    <option value="Personal Achievement">Personal Achievement</option>
-                    <option value="Impact Story">Impact Story</option>
-                    <option value="Certification">Certification</option>
-                    <option value="Award">Award</option>
-                    <option value="Recognition">Recognition</option>
-                </select>
+        <!-- Search and Filters -->
+        <div class="search-and-filters">
+            <!-- Keyword Search -->
+            <div class="search-container">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="keywordSearch" placeholder="Search testimonials, coaches, or content...">
+                </div>
             </div>
-            <div class="filter-group">
-                <label>Coach:</label>
-                <select id="coachFilter">
-                    <option value="">All Coaches</option>
-                </select>
+            
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Category:</label>
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="First Client">First Client</option>
+                        <option value="Revenue Milestone">Revenue Milestone</option>
+                        <option value="Breakthrough">Breakthrough</option>
+                        <option value="Client Success">Client Success</option>
+                        <option value="Business Growth">Business Growth</option>
+                        <option value="Personal Achievement">Personal Achievement</option>
+                        <option value="Impact Story">Impact Story</option>
+                        <option value="Certification">Certification</option>
+                        <option value="Award">Award</option>
+                        <option value="Recognition">Recognition</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Media Type:</label>
+                    <select id="mediaTypeFilter">
+                        <option value="">All Types</option>
+                        <option value="Video">Video</option>
+                        <option value="Written">Written</option>
+                        <option value="Interview">Interview</option>
+                        <option value="Screenshot">Screenshot</option>
+                        <option value="Image">Image</option>
+                        <option value="Audio">Audio</option>
+                        <option value="Document">Document</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Coach:</label>
+                    <select id="coachFilter">
+                        <option value="">All Coaches</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Time Period:</label>
+                    <select id="timeFilter">
+                        <option value="">All Time</option>
+                        <option value="week">Past Week</option>
+                        <option value="month">Past Month</option>
+                        <option value="quarter">Past 3 Months</option>
+                        <option value="year">Past Year</option>
+                    </select>
+                </div>
+                <button id="clearFilters" class="btn-clear">Clear All</button>
             </div>
-            <div class="filter-group">
-                <label>Time Period:</label>
-                <select id="timeFilter">
-                    <option value="">All Time</option>
-                    <option value="week">Past Week</option>
-                    <option value="month">Past Month</option>
-                    <option value="quarter">Past 3 Months</option>
-                    <option value="year">Past Year</option>
-                </select>
-            </div>
-            <button id="clearFilters" class="btn-clear">Clear All</button>
         </div>
 
         <div class="proof-wall" id="proofWall">

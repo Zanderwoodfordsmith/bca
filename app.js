@@ -15,7 +15,9 @@ class ProofWall {
         this.proofWall = document.getElementById('proofWall');
         this.loading = document.getElementById('loading');
         this.loadMoreBtn = document.getElementById('loadMoreBtn');
+        this.keywordSearch = document.getElementById('keywordSearch');
         this.categoryFilter = document.getElementById('categoryFilter');
+        this.mediaTypeFilter = document.getElementById('mediaTypeFilter');
         this.coachFilter = document.getElementById('coachFilter');
         this.timeFilter = document.getElementById('timeFilter');
         this.clearFilters = document.getElementById('clearFilters');
@@ -23,7 +25,9 @@ class ProofWall {
 
     bindEvents() {
         this.loadMoreBtn.addEventListener('click', () => this.loadMoreTestimonials());
+        this.keywordSearch.addEventListener('input', () => this.applyFilters());
         this.categoryFilter.addEventListener('change', () => this.applyFilters());
+        this.mediaTypeFilter.addEventListener('change', () => this.applyFilters());
         this.coachFilter.addEventListener('change', () => this.applyFilters());
         this.timeFilter.addEventListener('change', () => this.applyFilters());
         this.clearFilters.addEventListener('click', () => this.clearAllFilters());
@@ -117,23 +121,19 @@ class ProofWall {
                 const coachData = { id: coachDoc.id, ...coachDoc.data() };
                 console.log('✅ Found coach:', coachData);
                 
-                // Fetch all proof assets for this win (no asset-level approval needed)
-                console.log('📎 Looking for proof assets for win ID:', winDoc.id);
-                const assetsQuery = db.collection('proof_assets').where('win_id', '==', winDoc.id);
-                
-                const assetsSnapshot = await assetsQuery.get();
-                console.log('📎 Assets found for win:', assetsSnapshot.docs.length);
-                
-                const assets = assetsSnapshot.docs.map(doc => {
-                    const assetData = { id: doc.id, ...doc.data() };
-                    console.log('   📎 Asset:', assetData);
-                    return assetData;
-                });
+                // Use the new media fields from wins instead of proof_assets
+                console.log('📎 Win has media:', winData.media_type, winData.media_url);
                 
                 const testimonial = {
                     win: winData,
                     coach: coachData,
-                    assets: assets
+                    media: {
+                        type: winData.media_type,
+                        url: winData.media_url,
+                        title: winData.media_title,
+                        description: winData.media_description,
+                        format: winData.media_format
+                    }
                 };
                 
                 console.log('✅ Created testimonial:', testimonial);
@@ -171,14 +171,13 @@ class ProofWall {
                     join_date: new Date('2023-10-01'),
                     bio: 'Transformational life coach specializing in career transitions'
                 },
-                assets: [
-                    {
-                        asset_type: 'Written Quote',
-                        asset_format: 'Text',
-                        asset_title: 'Client Testimonial',
-                        asset_description: 'The coaching process was life-changing for me. Sarah helped me gain clarity and confidence to pursue my dream career.'
-                    }
-                ]
+                media: {
+                    type: 'Written',
+                    url: 'https://example.com/testimonial1',
+                    title: 'Client Testimonial',
+                    description: 'The coaching process was life-changing for me. Sarah helped me gain clarity and confidence to pursue my dream career.',
+                    format: 'Text'
+                }
             },
             {
                 win: {
@@ -196,14 +195,13 @@ class ProofWall {
                     join_date: new Date('2023-08-15'),
                     bio: 'Business coach focused on helping entrepreneurs scale their ventures'
                 },
-                assets: [
-                    {
-                        asset_type: 'Video Testimonial',
-                        asset_format: 'MP4',
-                        asset_title: 'Success Story Video',
-                        asset_description: 'A heartfelt video testimonial from a client who doubled their revenue in 6 months.'
-                    }
-                ]
+                media: {
+                    type: 'Video',
+                    url: 'https://youtube.com/watch?v=example',
+                    title: 'Success Story Video',
+                    description: 'A heartfelt video testimonial from a client who doubled their revenue in 6 months.',
+                    format: 'MP4'
+                }
             },
             {
                 win: {
@@ -221,14 +219,13 @@ class ProofWall {
                     join_date: new Date('2023-09-20'),
                     bio: 'Mindset and abundance coach helping people overcome financial blocks'
                 },
-                assets: [
-                    {
-                        asset_type: 'Social Post',
-                        asset_format: 'Image',
-                        asset_title: 'Success Celebration',
-                        asset_description: 'A celebratory social media post showcasing the client\'s transformation.'
-                    }
-                ]
+                media: {
+                    type: 'Image',
+                    url: 'https://example.com/success-post.jpg',
+                    title: 'Success Celebration',
+                    description: 'A celebratory social media post showcasing the client\'s transformation.',
+                    format: 'Image'
+                }
             }
         ];
     }
@@ -247,7 +244,7 @@ class ProofWall {
     }
 
     createTestimonialHTML(testimonial) {
-        const { win, coach, assets } = testimonial;
+        const { win, coach, media } = testimonial;
         const initials = `${coach.first_name[0]}${coach.last_name[0]}`;
         
         // Only show join date if it's valid and not the default date
@@ -260,29 +257,60 @@ class ProofWall {
             year: 'numeric' 
         }) : 'Date needed';
         
-        // Enhanced asset display - show all assets with better formatting
-        const assetContent = assets.length > 0 ? `
-            <div class="assets-section">
-                <h5 class="assets-title">📎 Supporting Evidence (${assets.length})</h5>
-                <div class="assets-grid">
-                    ${assets.map(asset => {
-                        let assetHTML = '';
+        // Enhanced media display - show media with better formatting, hide file names
+        const mediaContent = media && media.url && media.url.trim() !== '' ? `
+            <div class="media-section">
+                <h5 class="media-title">📎 Supporting Evidence</h5>
+                <div class="media-container">
+                    ${(() => {
+                        let mediaHTML = '';
                         
-                        // Show asset title and description if available
-                        if (asset.asset_title || asset.asset_description) {
-                            assetHTML += `<div class="asset-info">
-                                ${asset.asset_title ? `<h6 class="asset-title">${asset.asset_title}</h6>` : ''}
-                                ${asset.asset_description ? `<p class="asset-description">${asset.asset_description}</p>` : ''}
-                            </div>`;
-                        }
-                        
-                        // Show asset content based on type and URL
-                        if (asset.asset_url && asset.asset_url.trim() !== '') {
-                            switch (asset.asset_type) {
-                                case 'Video Testimonial':
-                                    // Determine video type based on URL extension
-                                    const videoUrl = asset.asset_url;
-                                    const videoExtension = videoUrl.split('.').pop().toLowerCase();
+                        // Show media content based on type and URL
+                        switch (media.type) {
+                            case 'Video':
+                                // Check if it's a YouTube or Vimeo URL
+                                const isYouTube = media.url.includes('youtube.com') || media.url.includes('youtu.be');
+                                const isVimeo = media.url.includes('vimeo.com');
+                                
+                                if (isYouTube) {
+                                    // Extract YouTube video ID
+                                    const youtubeId = media.url.includes('youtu.be') 
+                                        ? media.url.split('youtu.be/')[1]?.split('?')[0]
+                                        : media.url.split('v=')[1]?.split('&')[0];
+                                    
+                                    if (youtubeId) {
+                                        mediaHTML = `<div class="media-item">
+                                            <iframe width="100%" height="225" 
+                                                src="https://www.youtube.com/embed/${youtubeId}" 
+                                                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                                allowfullscreen style="border-radius: 8px; max-width: 400px;">
+                                            </iframe>
+                                        </div>`;
+                                    } else {
+                                        mediaHTML = `<div class="media-item">
+                                            <a href="${media.url}" target="_blank" class="media-link">🎥 Watch Video</a>
+                                        </div>`;
+                                    }
+                                } else if (isVimeo) {
+                                    // Extract Vimeo video ID
+                                    const vimeoId = media.url.split('vimeo.com/')[1]?.split('?')[0];
+                                    
+                                    if (vimeoId) {
+                                        mediaHTML = `<div class="media-item">
+                                            <iframe width="100%" height="225" 
+                                                src="https://player.vimeo.com/video/${vimeoId}" 
+                                                frameborder="0" allow="autoplay; fullscreen; picture-in-picture" 
+                                                allowfullscreen style="border-radius: 8px; max-width: 400px;">
+                                            </iframe>
+                                        </div>`;
+                                    } else {
+                                        mediaHTML = `<div class="media-item">
+                                            <a href="${media.url}" target="_blank" class="media-link">🎥 Watch Video</a>
+                                        </div>`;
+                                    }
+                                } else {
+                                    // Direct video file
+                                    const videoExtension = media.url.split('.').pop().toLowerCase();
                                     let videoType = 'video/mp4'; // default
                                     
                                     if (videoExtension === 'webm') videoType = 'video/webm';
@@ -290,90 +318,55 @@ class ProofWall {
                                     else if (videoExtension === 'avi') videoType = 'video/x-msvideo';
                                     else if (videoExtension === 'wmv') videoType = 'video/x-ms-wmv';
                                     
-                                    // Check if it's a YouTube or Vimeo URL
-                                    const isYouTube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
-                                    const isVimeo = videoUrl.includes('vimeo.com');
-                                    
-                                    if (isYouTube) {
-                                        // Extract YouTube video ID
-                                        const youtubeId = videoUrl.includes('youtu.be') 
-                                            ? videoUrl.split('youtu.be/')[1]?.split('?')[0]
-                                            : videoUrl.split('v=')[1]?.split('&')[0];
-                                        
-                                        if (youtubeId) {
-                                            assetHTML += `<div class="asset-media">
-                                                <iframe width="100%" height="225" 
-                                                    src="https://www.youtube.com/embed/${youtubeId}" 
-                                                    frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                                    allowfullscreen style="border-radius: 8px; max-width: 400px;">
-                                                </iframe>
-                                            </div>`;
-                                        } else {
-                                            assetHTML += `<div class="asset-media">
-                                                <a href="${videoUrl}" target="_blank" class="video-link">🎥 Watch Video on YouTube</a>
-                                            </div>`;
-                                        }
-                                    } else if (isVimeo) {
-                                        // Extract Vimeo video ID
-                                        const vimeoId = videoUrl.split('vimeo.com/')[1]?.split('?')[0];
-                                        
-                                        if (vimeoId) {
-                                            assetHTML += `<div class="asset-media">
-                                                <iframe width="100%" height="225" 
-                                                    src="https://player.vimeo.com/video/${vimeoId}" 
-                                                    frameborder="0" allow="autoplay; fullscreen; picture-in-picture" 
-                                                    allowfullscreen style="border-radius: 8px; max-width: 400px;">
-                                                </iframe>
-                                            </div>`;
-                                        } else {
-                                            assetHTML += `<div class="asset-media">
-                                                <a href="${videoUrl}" target="_blank" class="video-link">🎥 Watch Video on Vimeo</a>
-                                            </div>`;
-                                        }
-                                    } else {
-                                        // Direct video file
-                                        assetHTML += `<div class="asset-media">
-                                            <video controls preload="metadata" style="width: 100%; max-width: 400px; border-radius: 8px;">
-                                                <source src="${videoUrl}" type="${videoType}">
-                                                <source src="${videoUrl}" type="video/mp4">
-                                                <p>Your browser doesn't support HTML5 video. <a href="${videoUrl}" target="_blank">Download the video</a> instead.</p>
-                                            </video>
-                                        </div>`;
-                                    }
-                                    break;
-                                case 'Social Post':
-                                    assetHTML += `<div class="asset-media">
-                                        <img src="${asset.asset_url}" alt="Social post" style="width: 100%; max-width: 400px; border-radius: 8px;" />
+                                    mediaHTML = `<div class="media-item">
+                                        <video controls preload="metadata" style="width: 100%; max-width: 400px; border-radius: 8px;">
+                                            <source src="${media.url}" type="${videoType}">
+                                            <source src="${media.url}" type="video/mp4">
+                                            <p>Your browser doesn't support HTML5 video. <a href="${media.url}" target="_blank">Watch video</a> instead.</p>
+                                        </video>
                                     </div>`;
-                                    break;
-                                case 'Case Study':
-                                    assetHTML += `<div class="asset-media">
-                                        <a href="${asset.asset_url}" target="_blank" class="case-study-link">📊 View Case Study</a>
-                                    </div>`;
-                                    break;
-                                case 'Written Quote':
-                                    assetHTML += `<div class="asset-media">
-                                        <div class="quote-content" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
-                                            <a href="${asset.asset_url}" target="_blank" class="quote-link">📄 Read Full Quote</a>
-                                        </div>
-                                    </div>`;
-                                    break;
-                                default:
-                                    assetHTML += `<div class="asset-media">
-                                        <a href="${asset.asset_url}" target="_blank" class="asset-link">📄 View Asset</a>
-                                    </div>`;
-                            }
-                        } else if (asset.asset_type === 'Written Quote' && asset.asset_description) {
-                            // Show written quote content even without URL
-                            assetHTML += `<div class="asset-media">
-                                <div class="quote-content" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
-                                    <p style="margin: 0; font-style: italic;">"${asset.asset_description}"</p>
-                                </div>
-                            </div>`;
+                                }
+                                break;
+                            case 'Image':
+                            case 'Screenshot':
+                                mediaHTML = `<div class="media-item">
+                                    <img src="${media.url}" alt="Supporting evidence" style="width: 100%; max-width: 400px; border-radius: 8px;" />
+                                </div>`;
+                                break;
+                            case 'Written':
+                                mediaHTML = `<div class="media-item">
+                                    <div class="quote-content" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                                        ${media.description ? `<p style="margin: 0; font-style: italic;">"${media.description}"</p>` : `<a href="${media.url}" target="_blank" class="quote-link">📄 Read Testimonial</a>`}
+                                    </div>
+                                </div>`;
+                                break;
+                            case 'Interview':
+                                mediaHTML = `<div class="media-item">
+                                    <a href="${media.url}" target="_blank" class="media-link">🎤 Listen to Interview</a>
+                                </div>`;
+                                break;
+                            case 'Audio':
+                                mediaHTML = `<div class="media-item">
+                                    <audio controls style="width: 100%; max-width: 400px;">
+                                        <source src="${media.url}" type="audio/mpeg">
+                                        <source src="${media.url}" type="audio/wav">
+                                        <a href="${media.url}" target="_blank">Listen to audio</a>
+                                    </audio>
+                                </div>`;
+                                break;
+                            case 'Document':
+                                mediaHTML = `<div class="media-item">
+                                    <a href="${media.url}" target="_blank" class="media-link">📄 View Document</a>
+                                </div>`;
+                                break;
+                            default:
+                                mediaHTML = `<div class="media-item">
+                                    <a href="${media.url}" target="_blank" class="media-link">📄 View Evidence</a>
+                                </div>`;
                         }
                         
-                        return `<div class="asset-item">${assetHTML}</div>`;
-                    }).join('')}
+                        return mediaHTML;
+                    })()}
                 </div>
             </div>
         ` : '';
@@ -397,7 +390,7 @@ class ProofWall {
                 <h4 class="win-title">${win.win_title || 'Untitled Win'}</h4>
                 <p class="win-description">${win.win_description || 'No description provided'}</p>
                 
-                ${assetContent}
+                ${mediaContent}
                 
                 <div class="win-date">
                     ${winDate}
@@ -503,10 +496,36 @@ class ProofWall {
     applyFilters() {
         this.filteredTestimonials = [...this.allTestimonials];
 
+        // Keyword search
+        const keyword = this.keywordSearch.value.toLowerCase();
+        if (keyword) {
+            this.filteredTestimonials = this.filteredTestimonials.filter(t => {
+                const coachName = (t.coach.first_name + ' ' + t.coach.last_name).toLowerCase();
+                const winTitle = (t.win.win_title || '').toLowerCase();
+                const winDescription = (t.win.win_description || '').toLowerCase();
+                const winCategory = (t.win.win_category || '').toLowerCase();
+                const mediaDescription = (t.media?.description || '').toLowerCase();
+                const mediaTitle = (t.media?.title || '').toLowerCase();
+                
+                return coachName.includes(keyword) ||
+                       winTitle.includes(keyword) ||
+                       winDescription.includes(keyword) ||
+                       winCategory.includes(keyword) ||
+                       mediaDescription.includes(keyword) ||
+                       mediaTitle.includes(keyword);
+            });
+        }
+
         // Category filter
         const selectedCategory = this.categoryFilter.value;
         if (selectedCategory) {
             this.filteredTestimonials = this.filteredTestimonials.filter(t => t.win.win_category === selectedCategory);
+        }
+
+        // Media type filter
+        const selectedMediaType = this.mediaTypeFilter.value;
+        if (selectedMediaType) {
+            this.filteredTestimonials = this.filteredTestimonials.filter(t => t.media?.type === selectedMediaType);
         }
 
         // Coach filter
@@ -538,9 +557,10 @@ class ProofWall {
                     break;
             }
             
-            this.filteredTestimonials = this.filteredTestimonials.filter(t => 
-                new Date(t.win.win_date.seconds * 1000) >= filterDate
-            );
+            this.filteredTestimonials = this.filteredTestimonials.filter(t => {
+                const winDate = t.win.win_date?.seconds ? new Date(t.win.win_date.seconds * 1000) : new Date(t.win.win_date);
+                return winDate >= filterDate;
+            });
         }
 
         this.displayTestimonials(this.filteredTestimonials.slice(0, this.pageSize));
@@ -548,7 +568,9 @@ class ProofWall {
     }
 
     clearAllFilters() {
+        this.keywordSearch.value = '';
         this.categoryFilter.value = '';
+        this.mediaTypeFilter.value = '';
         this.coachFilter.value = '';
         this.timeFilter.value = '';
         this.filteredTestimonials = [...this.allTestimonials];

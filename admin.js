@@ -4,9 +4,11 @@ class AdminPanel {
         this.coaches = [];
         this.wins = [];
         this.proof_assets = [];
+        this.media = [];
         this.currentSection = 'coaches';
         this.searchTerm = '';
-        this.currentGroupBy = 'none';
+        this.csvData = null;
+        this.winsCsvData = null;
         
         // Initialize Firebase
         this.db = window.db || firebase.firestore();
@@ -17,38 +19,57 @@ class AdminPanel {
         
         // Initialize bulk actions bar (hidden by default)
         this.updateBulkActionsBar();
+        console.log('Bulk actions bar initialized');
     }
 
     initializeElements() {
         // Tab buttons
         this.coachesTab = document.getElementById('coachesTab');
         this.winsTab = document.getElementById('winsTab');
+        this.mediaTab = document.getElementById('mediaTab');
         this.settingsTab = document.getElementById('settingsTab');
         
         // Section containers
         this.coachesSection = document.getElementById('coachesSection');
         this.winsSection = document.getElementById('winsSection');
+        this.mediaSection = document.getElementById('mediaSection');
         this.settingsSection = document.getElementById('settingsSection');
         
         // Control containers
         this.coachesControls = document.getElementById('coachesControls');
         this.winsControls = document.getElementById('winsControls');
+        this.mediaControls = document.getElementById('mediaControls');
         
         // Table bodies
         this.coachesTableBody = document.getElementById('coachesTableBody');
         this.winsTableBody = document.getElementById('winsTableBody');
+        this.mediaTableBody = document.getElementById('mediaTableBody');
         
         // Other elements
         this.searchInput = document.getElementById('searchInput');
         this.columnToggleBtn = document.getElementById('columnToggleBtn');
+        this.coachesSortSelect = document.getElementById('coachesSortSelect');
         this.closeColumnModalBtn = document.getElementById('closeColumnModal');
         this.applyColumns = document.getElementById('applyColumns');
         this.viewProofWall = document.getElementById('viewProofWall');
         this.addCoachBtn = document.getElementById('addCoachBtn');
         this.addWinBtn = document.getElementById('addWinBtn');
+        this.addMediaBtn = document.getElementById('addMediaBtn');
+        this.bulkUploadBtn = document.getElementById('bulkUploadBtn');
+        
+        // Filter elements
+        this.toggleFiltersBtn = document.getElementById('toggleFiltersBtn');
+        this.coachesFilters = document.getElementById('coachesFilters');
+        this.mediaFilters = document.getElementById('mediaFilters');
+        this.winsCountFilter = document.getElementById('winsCountFilter');
+        this.joinDateFilter = document.getElementById('joinDateFilter');
+        this.recentWinFilter = document.getElementById('recentWinFilter');
+        this.coachMediaTypeFilter = document.getElementById('coachMediaTypeFilter');
+        this.mediaTypeFilter = document.getElementById('mediaTypeFilter');
+        this.mediaPlatformFilter = document.getElementById('mediaPlatformFilter');
+        this.mediaAssignmentFilter = document.getElementById('mediaAssignmentFilter');
         
         // Wins controls
-        this.winsGroupByBtn = document.getElementById('winsGroupByBtn');
         this.winsColumnToggleBtn = document.getElementById('winsColumnToggleBtn');
         
         // Modals
@@ -56,19 +77,42 @@ class AdminPanel {
         this.closeWinsColumnModal = document.getElementById('closeWinsColumnModal');
         this.applyWinsColumns = document.getElementById('applyWinsColumns');
         
-        this.groupByModal = document.getElementById('groupByModal');
-        this.closeGroupByModal = document.getElementById('closeGroupByModal');
-        this.applyGroupBy = document.getElementById('applyGroupBy');
+        // Media modals
+        this.mediaColumnModal = document.getElementById('mediaColumnModal');
+        this.closeMediaColumnModal = document.getElementById('closeMediaColumnModal');
+        this.applyMediaColumns = document.getElementById('applyMediaColumns');
+        this.addMediaModal = document.getElementById('addMediaModal');
+        this.closeAddMediaModal = document.getElementById('closeAddMediaModal');
+        this.saveNewMedia = document.getElementById('saveNewMedia');
+        this.bulkUploadModal = document.getElementById('bulkUploadModal');
+        this.closeBulkUploadModal = document.getElementById('closeBulkUploadModal');
+        this.processBulkUpload = document.getElementById('processBulkUpload');
+        
+        // Win selection modal
+        this.winSelectionModal = document.getElementById('winSelectionModal');
+        this.closeWinSelectionModal = document.getElementById('closeWinSelectionModal');
+        this.winSearchInput = document.getElementById('winSearchInput');
+        this.winsList = document.getElementById('winsList');
+        this.assignMediaToWin = document.getElementById('assignMediaToWin');
+        this.unassignMediaFromWin = document.getElementById('unassignMediaFromWin');
+        
+        // Edit media modal
+        this.editMediaModal = document.getElementById('editMediaModal');
+        this.closeEditMediaModal = document.getElementById('closeEditMediaModal');
+        this.saveEditMedia = document.getElementById('saveEditMedia');
+        this.deleteMedia = document.getElementById('deleteMedia');
         
         // Select all checkboxes
         this.selectAllCoaches = document.getElementById('selectAllCoaches');
         this.selectAllWins = document.getElementById('selectAllWins');
+        this.selectAllMedia = document.getElementById('selectAllMedia');
         
         // Bulk actions elements
         this.bulkActionsBar = document.getElementById('bulkActionsBar');
         this.selectedCount = document.getElementById('selectedCount');
         this.bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
         this.clearSelectionBtn = document.getElementById('clearSelectionBtn');
+        this.bulkDeleteWinsBtn = document.getElementById('bulkDeleteWinsBtn');
         
         // CSV import elements
         this.importCoachesBtn = document.getElementById('importCoachesBtn');
@@ -81,12 +125,25 @@ class AdminPanel {
         this.previewTable = document.getElementById('previewTable');
         this.confirmImport = document.getElementById('confirmImport');
         this.cancelImport = document.getElementById('cancelImport');
+        
+        // Wins CSV import elements
+        this.importWinsBtn = document.getElementById('importWinsBtn');
+        this.winsCsvImportModal = document.getElementById('winsCsvImportModal');
+        this.closeWinsCsvImportModal = document.getElementById('closeWinsCsvImportModal');
+        this.winsCsvFileInput = document.getElementById('winsCsvFileInput');
+        this.winsFileDropZone = document.getElementById('winsFileDropZone');
+        this.winsSelectedFileName = document.getElementById('winsSelectedFileName');
+        this.winsImportPreview = document.getElementById('winsImportPreview');
+        this.winsPreviewTable = document.getElementById('winsPreviewTable');
+        this.confirmWinsImport = document.getElementById('confirmWinsImport');
+        this.cancelWinsImport = document.getElementById('cancelWinsImport');
     }
 
     bindEvents() {
         // Tab switching
         this.coachesTab.addEventListener('click', () => this.switchTab('coaches'));
         this.winsTab.addEventListener('click', () => this.switchTab('wins'));
+        this.mediaTab.addEventListener('click', () => this.switchTab('media'));
         this.settingsTab.addEventListener('click', () => this.switchTab('settings'));
         
         // Search
@@ -100,29 +157,68 @@ class AdminPanel {
         this.closeColumnModalBtn.addEventListener('click', () => this.closeColumnModal());
         this.applyColumns.addEventListener('click', () => this.applyColumnChanges());
         
+        // Coaches sorting
+        this.coachesSortSelect.addEventListener('change', (e) => this.sortCoaches(e.target.value));
+        
+        // Filter controls
+        this.toggleFiltersBtn.addEventListener('click', () => this.toggleFilters());
+        this.winsCountFilter.addEventListener('change', () => this.applyCoachesFilters());
+        this.joinDateFilter.addEventListener('change', () => this.applyCoachesFilters());
+        this.recentWinFilter.addEventListener('change', () => this.applyCoachesFilters());
+        this.coachMediaTypeFilter.addEventListener('change', () => this.applyCoachesFilters());
+        
+        // Media filters
+        this.mediaTypeFilter.addEventListener('change', () => this.applyMediaFilters());
+        this.mediaPlatformFilter.addEventListener('change', () => this.applyMediaFilters());
+        this.mediaAssignmentFilter.addEventListener('change', () => this.applyMediaFilters());
+        
         // Other buttons
         this.viewProofWall.addEventListener('click', () => window.open('index.html', '_blank'));
         this.addCoachBtn.addEventListener('click', () => this.addCoach());
         this.addWinBtn.addEventListener('click', () => this.addWin());
+        this.addMediaBtn.addEventListener('click', () => this.addMedia());
+        this.bulkUploadBtn.addEventListener('click', () => this.bulkUpload());
         
         // Wins controls
-        this.winsGroupByBtn.addEventListener('click', () => this.showGroupByModal());
         this.winsColumnToggleBtn.addEventListener('click', () => this.showWinsColumnModal());
+        
+        // Media controls
+        this.mediaColumnToggleBtn = document.getElementById('mediaColumnToggleBtn');
+        this.mediaColumnToggleBtn.addEventListener('click', () => this.showMediaColumnModal());
         
         // Wins column modal
         this.closeWinsColumnModal.addEventListener('click', () => this.winsColumnModal.classList.remove('show'));
         this.applyWinsColumns.addEventListener('click', () => this.applyWinsColumnChanges());
         
-        // Group by modal
-        this.closeGroupByModal.addEventListener('click', () => this.groupByModal.classList.remove('show'));
-        this.applyGroupBy.addEventListener('click', () => this.applyGroupByChanges());
+        // Media column modal
+        this.closeMediaColumnModal.addEventListener('click', () => this.mediaColumnModal.classList.remove('show'));
+        this.applyMediaColumns.addEventListener('click', () => this.applyMediaColumnChanges());
+        
+        // Media modals
+        this.closeAddMediaModal.addEventListener('click', () => this.addMediaModal.classList.remove('show'));
+        this.saveNewMedia.addEventListener('click', () => this.saveNewMediaItem());
+        this.closeBulkUploadModal.addEventListener('click', () => this.bulkUploadModal.classList.remove('show'));
+        this.processBulkUpload.addEventListener('click', () => this.processBulkImageUpload());
+        
+        // Win selection modal
+        this.closeWinSelectionModal.addEventListener('click', () => this.winSelectionModal.classList.remove('show'));
+        this.winSearchInput.addEventListener('input', () => this.filterWinsForSelection());
+        this.assignMediaToWin.addEventListener('click', () => this.assignSelectedWinToMedia());
+        this.unassignMediaFromWin.addEventListener('click', () => this.unassignMediaFromWinAction());
+        
+        // Edit media modal
+        this.closeEditMediaModal.addEventListener('click', () => this.editMediaModal.classList.remove('show'));
+        this.saveEditMedia.addEventListener('click', () => this.saveEditMediaItem());
+        this.deleteMedia.addEventListener('click', () => this.deleteMediaItem());
         
         // Select all checkboxes
         this.selectAllCoaches.addEventListener('change', (e) => this.toggleSelectAll('coaches', e.target.checked));
         this.selectAllWins.addEventListener('change', (e) => this.toggleSelectAll('wins', e.target.checked));
+        this.selectAllMedia.addEventListener('change', (e) => this.toggleSelectAll('media', e.target.checked));
         
         // Bulk actions
         this.bulkDeleteBtn.addEventListener('click', () => this.bulkDeleteCoaches());
+        this.bulkDeleteWinsBtn.addEventListener('click', () => this.bulkDeleteWins());
         this.clearSelectionBtn.addEventListener('click', () => this.clearSelection());
         
         // CSV import
@@ -140,21 +236,49 @@ class AdminPanel {
         this.csvFileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.confirmImport.addEventListener('click', () => this.importCoaches());
         
+        // Wins CSV import
+        this.importWinsBtn.addEventListener('click', () => this.showWinsCsvImportModal());
+        if (this.closeWinsCsvImportModal) {
+            this.closeWinsCsvImportModal.addEventListener('click', () => {
+                this.winsCsvImportModal.classList.remove('show');
+                this.resetWinsCsvImportModal();
+            });
+        }
+        if (this.cancelWinsImport) {
+            this.cancelWinsImport.addEventListener('click', () => {
+                this.winsCsvImportModal.classList.remove('show');
+                this.resetWinsCsvImportModal();
+            });
+        }
+        this.winsCsvFileInput.addEventListener('change', (e) => this.handleWinsFileSelect(e));
+        this.confirmWinsImport.addEventListener('click', () => this.importWins());
+        
         // File drop zone
         this.fileDropZone.addEventListener('click', () => this.csvFileInput.click());
         this.fileDropZone.addEventListener('dragover', (e) => this.handleDragOver(e));
         this.fileDropZone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
         this.fileDropZone.addEventListener('drop', (e) => this.handleFileDrop(e));
         
+        // Wins file drop zone
+        this.winsFileDropZone.addEventListener('click', () => this.winsCsvFileInput.click());
+        this.winsFileDropZone.addEventListener('dragover', (e) => this.handleDragOver(e));
+        this.winsFileDropZone.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+        this.winsFileDropZone.addEventListener('drop', (e) => this.handleWinsFileDrop(e));
+        
         // Close modal when clicking outside
         window.addEventListener('click', (e) => {
             const columnModal = document.getElementById('columnModal');
             const csvModal = document.getElementById('csvImportModal');
+            const winsCsvModal = document.getElementById('winsCsvImportModal');
             if (e.target === columnModal) {
                 this.closeColumnModal();
             }
             if (e.target === csvModal) {
                 csvModal.classList.remove('show');
+            }
+            if (e.target === winsCsvModal) {
+                winsCsvModal.classList.remove('show');
+                this.resetWinsCsvImportModal();
             }
         });
     }
@@ -179,18 +303,37 @@ class AdminPanel {
         // Show/hide appropriate controls
         this.coachesControls.style.display = 'none';
         this.winsControls.style.display = 'none';
+        this.mediaControls.style.display = 'none';
+        
+        // Show/hide appropriate filters
+        this.coachesFilters.style.display = 'none';
+        this.mediaFilters.style.display = 'none';
         
         if (section === 'coaches') {
             this.coachesControls.style.display = 'flex';
         } else if (section === 'wins') {
             this.winsControls.style.display = 'flex';
+        } else if (section === 'media') {
+            this.mediaControls.style.display = 'flex';
         }
         
         // Update breadcrumb
         document.getElementById('currentSectionTitle').textContent = section.charAt(0).toUpperCase() + section.slice(1);
         
         this.currentSection = section;
-        this.renderCurrentSection();
+        console.log('Current section set to:', this.currentSection);
+        
+        // Refresh data when switching to wins tab to ensure latest data is shown
+        if (section === 'wins') {
+            this.loadWins().then(() => {
+                this.renderCurrentSection();
+            }).catch(error => {
+                console.error('Error refreshing wins data:', error);
+                this.renderCurrentSection(); // Still render with existing data
+            });
+        } else {
+            this.renderCurrentSection();
+        }
     }
 
     resetToCleanState() {
@@ -225,16 +368,16 @@ class AdminPanel {
             checkboxes = document.querySelectorAll('#coachesSection .row-checkbox');
         } else if (section === 'wins') {
             checkboxes = document.querySelectorAll('#winsSection .row-checkbox');
+        } else if (section === 'media') {
+            checkboxes = document.querySelectorAll('#mediaSection .row-checkbox');
         }
         
         checkboxes.forEach(checkbox => {
             checkbox.checked = checked;
         });
         
-        // Update bulk actions bar for coaches
-        if (section === 'coaches') {
-            this.updateBulkActionsBar();
-        }
+        // Update bulk actions bar for current section
+        this.updateBulkActionsBar();
         
         console.log(`Updated ${checkboxes.length} checkboxes for ${section}`);
     }
@@ -264,7 +407,8 @@ class AdminPanel {
             await Promise.all([
                 this.loadCoaches(),
                 this.loadWins(),
-                this.loadProofAssets()
+                this.loadProofAssets(),
+                this.loadMedia()
             ]);
             console.log('All data loaded');
             this.renderCurrentSection();
@@ -297,9 +441,19 @@ class AdminPanel {
 
     async loadWins() {
         try {
-            const snapshot = await this.db.collection('wins').orderBy('win_date', 'desc').get();
+            // Load wins without ordering first to avoid index issues with null dates
+            const snapshot = await this.db.collection('wins').get();
             this.wins = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Sort by date on the client side (newest first, null dates last)
+            this.wins.sort((a, b) => {
+                const dateA = a.win_date?.toDate ? a.win_date.toDate() : (a.created_at?.toDate ? a.created_at.toDate() : new Date(0));
+                const dateB = b.win_date?.toDate ? b.win_date.toDate() : (b.created_at?.toDate ? b.created_at.toDate() : new Date(0));
+                return dateB - dateA; // Newest first
+            });
+            
             console.log('Wins loaded:', this.wins.length);
+            console.log('Sample win data:', this.wins[0]); // Log first win for debugging
         } catch (error) {
             console.error('Error loading wins:', error);
             throw error;
@@ -325,10 +479,13 @@ class AdminPanel {
             case 'wins':
                 this.renderWinsTable();
                 break;
+            case 'media':
+                this.renderMediaTable();
+                break;
         }
     }
 
-    renderCoachesTable() {
+    renderCoachesTable(sortedData = null) {
         console.log('Rendering coaches table, count:', this.coaches.length);
         
         if (this.coaches.length === 0) {
@@ -336,7 +493,8 @@ class AdminPanel {
             return;
         }
         
-        let data = this.coaches;
+        // Use sorted data if provided, otherwise use original coaches array
+        let data = sortedData || this.coaches;
         
         // Apply search filter
         if (this.searchTerm) {
@@ -345,9 +503,13 @@ class AdminPanel {
             );
         }
         
-        // Apply grouping if selected
-        if (this.currentGroupBy !== 'none') {
-            data = this.groupCoaches(data, this.currentGroupBy);
+        // Apply advanced filters
+        data = this.applyCoachesFilters(data);
+        
+        // Apply current sort if one is selected
+        const currentSort = this.coachesSortSelect ? this.coachesSortSelect.value : '';
+        if (currentSort) {
+            data = this.applySorting(data, currentSort);
         }
         
         if (data.length === 0) {
@@ -355,18 +517,6 @@ class AdminPanel {
             return;
         }
 
-        // Sort coaches by most recent win (newest first)
-        data.sort((a, b) => {
-            const aWins = this.wins.filter(win => win.coach_id === a.id);
-            const bWins = this.wins.filter(win => win.coach_id === b.id);
-            
-            // Get most recent win for each coach
-            const aMostRecent = aWins.length > 0 ? Math.max(...aWins.map(win => win.win_date?.seconds || 0)) : 0;
-            const bMostRecent = bWins.length > 0 ? Math.max(...bWins.map(win => win.win_date?.seconds || 0)) : 0;
-            
-            // Sort by most recent win (newest first)
-            return bMostRecent - aMostRecent;
-        });
 
         // Get visible columns from the table headers
         const visibleColumns = this.getVisibleColumns();
@@ -434,7 +584,12 @@ class AdminPanel {
         // Add event listeners to checkboxes for bulk actions
         setTimeout(() => {
             document.querySelectorAll('#coachesSection .row-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', () => this.updateBulkActionsBar());
+                // Remove existing listeners to prevent duplicates
+                checkbox.removeEventListener('change', this.updateBulkActionsBar);
+                checkbox.addEventListener('change', (e) => {
+                    console.log('Coach checkbox changed:', e.target.checked, e.target.getAttribute('data-id'));
+                    this.updateBulkActionsBar();
+                });
             });
         }, 100);
     }
@@ -461,43 +616,165 @@ class AdminPanel {
         return visibleColumns;
     }
 
-    groupCoaches(coaches, groupBy) {
-        if (groupBy === 'none') return coaches;
+    sortCoaches(sortOption, dataToSort = null) {
+        if (!sortOption) {
+            // No sorting - render as normal
+            this.renderCurrentSection();
+            return;
+        }
+
+        console.log('Sorting coaches by:', sortOption);
         
-        const grouped = {};
-        coaches.forEach(coach => {
-            let groupKey;
-            switch (groupBy) {
-                case 'gender':
-                    groupKey = coach.gender || 'Not Specified';
-                    break;
-                case 'join_date':
-                    groupKey = coach.join_date ? this.formatDate(coach.join_date) : 'No Date';
-                    break;
-                case 'wins_count':
-                    const winsCount = this.wins.filter(win => win.coach_id === coach.id).length;
-                    if (winsCount === 0) groupKey = '0 wins';
-                    else if (winsCount === 1) groupKey = '1 win';
-                    else groupKey = `${winsCount} wins`;
-                    break;
-                default:
-                    groupKey = 'Other';
+        // Use provided data or default to all coaches
+        let sortedCoaches = dataToSort ? [...dataToSort] : [...this.coaches];
+        
+        switch (sortOption) {
+            case 'name-asc':
+                sortedCoaches.sort((a, b) => {
+                    const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+                    const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+                break;
+                
+            case 'name-desc':
+                sortedCoaches.sort((a, b) => {
+                    const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+                    const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+                    return nameB.localeCompare(nameA);
+                });
+                break;
+                
+            case 'wins-asc':
+                sortedCoaches.sort((a, b) => {
+                    const winsA = this.wins.filter(win => win.coach_id === a.id).length;
+                    const winsB = this.wins.filter(win => win.coach_id === b.id).length;
+                    return winsA - winsB;
+                });
+                break;
+                
+            case 'wins-desc':
+                sortedCoaches.sort((a, b) => {
+                    const winsA = this.wins.filter(win => win.coach_id === a.id).length;
+                    const winsB = this.wins.filter(win => win.coach_id === b.id).length;
+                    return winsB - winsA;
+                });
+                break;
+                
+            case 'recent-win-asc':
+                sortedCoaches.sort((a, b) => {
+                    const recentWinA = this.getMostRecentWinDate(a.id);
+                    const recentWinB = this.getMostRecentWinDate(b.id);
+                    
+                    // Coaches with no wins go to the end
+                    if (!recentWinA && !recentWinB) return 0;
+                    if (!recentWinA) return 1;
+                    if (!recentWinB) return -1;
+                    
+                    return recentWinA - recentWinB;
+                });
+                break;
+                
+            case 'recent-win-desc':
+                sortedCoaches.sort((a, b) => {
+                    const recentWinA = this.getMostRecentWinDate(a.id);
+                    const recentWinB = this.getMostRecentWinDate(b.id);
+                    
+                    // Coaches with no wins go to the end
+                    if (!recentWinA && !recentWinB) return 0;
+                    if (!recentWinA) return 1;
+                    if (!recentWinB) return -1;
+                    
+                    return recentWinB - recentWinA;
+                });
+                break;
+        }
+        
+        // Render with sorted data
+        this.renderCoachesTable(sortedCoaches);
+    }
+
+    getMostRecentWinDate(coachId) {
+        const coachWins = this.wins.filter(win => win.coach_id === coachId);
+        if (coachWins.length === 0) return null;
+        
+        let mostRecent = null;
+        coachWins.forEach(win => {
+            const winDate = win.win_date?.toDate ? win.win_date.toDate() : (win.created_at?.toDate ? win.created_at.toDate() : new Date(0));
+            if (!mostRecent || winDate > mostRecent) {
+                mostRecent = winDate;
             }
-            
-            if (!grouped[groupKey]) {
-                grouped[groupKey] = [];
-            }
-            grouped[groupKey].push(coach);
         });
         
-        // Convert back to flat array with group headers
-        const result = [];
-        Object.keys(grouped).sort().forEach(groupKey => {
-            result.push({ isGroupHeader: true, groupKey, count: grouped[groupKey].length });
-            result.push(...grouped[groupKey]);
-        });
+        return mostRecent;
+    }
+
+    applySorting(data, sortOption) {
+        let sortedData = [...data];
         
-        return result;
+        switch (sortOption) {
+            case 'name-asc':
+                sortedData.sort((a, b) => {
+                    const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+                    const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+                break;
+                
+            case 'name-desc':
+                sortedData.sort((a, b) => {
+                    const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+                    const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+                    return nameB.localeCompare(nameA);
+                });
+                break;
+                
+            case 'wins-asc':
+                sortedData.sort((a, b) => {
+                    const winsA = this.wins.filter(win => win.coach_id === a.id).length;
+                    const winsB = this.wins.filter(win => win.coach_id === b.id).length;
+                    return winsA - winsB;
+                });
+                break;
+                
+            case 'wins-desc':
+                sortedData.sort((a, b) => {
+                    const winsA = this.wins.filter(win => win.coach_id === a.id).length;
+                    const winsB = this.wins.filter(win => win.coach_id === b.id).length;
+                    return winsB - winsA;
+                });
+                break;
+                
+            case 'recent-win-asc':
+                sortedData.sort((a, b) => {
+                    const recentWinA = this.getMostRecentWinDate(a.id);
+                    const recentWinB = this.getMostRecentWinDate(b.id);
+                    
+                    // Coaches with no wins go to the end
+                    if (!recentWinA && !recentWinB) return 0;
+                    if (!recentWinA) return 1;
+                    if (!recentWinB) return -1;
+                    
+                    return recentWinA - recentWinB;
+                });
+                break;
+                
+            case 'recent-win-desc':
+                sortedData.sort((a, b) => {
+                    const recentWinA = this.getMostRecentWinDate(a.id);
+                    const recentWinB = this.getMostRecentWinDate(b.id);
+                    
+                    // Coaches with no wins go to the end
+                    if (!recentWinA && !recentWinB) return 0;
+                    if (!recentWinA) return 1;
+                    if (!recentWinB) return -1;
+                    
+                    return recentWinB - recentWinA;
+                });
+                break;
+        }
+        
+        return sortedData;
     }
 
     renderWinsTable() {
@@ -520,10 +797,6 @@ class AdminPanel {
             });
         }
         
-        // Apply grouping if selected
-        if (this.currentGroupBy !== 'none') {
-            data = this.groupWins(data, this.currentGroupBy);
-        }
         
         if (data.length === 0) {
             this.winsTableBody.innerHTML = '<tr><td colspan="7" class="loading">No wins found</td></tr>';
@@ -545,14 +818,41 @@ class AdminPanel {
             const coach = this.coaches.find(c => c.id === win.coach_id);
             const coachName = coach ? `${coach.first_name} ${coach.last_name}` : 'No Coach';
             
+            // Format priority with enhanced color coding and badges
+            const priority = win.priority || '';
+            let priorityText = '-';
+            let priorityColor = '#6b7280'; // default gray color
+            let priorityBgColor = '#f3f4f6'; // light gray background
+            let priorityBadge = '';
+            
+            if (priority && priority.trim() !== '') {
+                const priorityLower = priority.toLowerCase();
+                priorityText = priority.charAt(0).toUpperCase() + priority.slice(1);
+                
+                if (priorityLower === 'high') {
+                    priorityColor = '#dc2626'; // darker red
+                    priorityBgColor = '#fef2f2'; // light red background
+                    priorityBadge = '🔴'; // red circle emoji
+                } else if (priorityLower === 'medium') {
+                    priorityColor = '#d97706'; // darker orange
+                    priorityBgColor = '#fffbeb'; // light orange background
+                    priorityBadge = '🟡'; // yellow circle emoji
+                } else if (priorityLower === 'low') {
+                    priorityColor = '#059669'; // green
+                    priorityBgColor = '#ecfdf5'; // light green background
+                    priorityBadge = '🟢'; // green circle emoji
+                }
+            }
+            
             return `
-            <tr data-id="${win.id}" onclick="adminPanel.showWinDetail('${win.id}')" style="cursor: pointer;">
+            <tr data-id="${win.id}">
                 <td class="checkbox-col" onclick="event.stopPropagation()">
                     <input type="checkbox" class="row-checkbox" data-id="${win.id}">
                 </td>
+                <td class="col-title" onclick="adminPanel.showWinDetail('${win.id}')" style="cursor: pointer;">${win.win_title || 'Untitled'}</td>
                 <td class="col-coach" onclick="adminPanel.selectCoachForWin('${win.id}', event)">${coachName}</td>
-                <td class="col-title">${win.win_title || 'Untitled'}</td>
-                <td class="col-category" style="display: none;">${win.win_category || 'Uncategorized'}</td>
+                <td class="col-category">${win.win_category || 'Uncategorized'}</td>
+                <td class="col-priority" style="color: ${priorityColor}; font-weight: 500; background-color: ${priorityBgColor}; padding: 8px 12px; border-radius: 6px; text-align: center;">${priorityBadge} ${priorityText}</td>
                 <td class="col-description" style="display: none;">${win.win_description || 'No description provided'}</td>
                 <td class="col-date">${win.win_date ? this.formatDate(win.win_date) : 'No date'}</td>
                 <td class="col-created" style="display: none;">${win.created_at ? this.formatDate(win.created_at) : 'Unknown'}</td>
@@ -563,47 +863,16 @@ class AdminPanel {
         // Add event listeners to checkboxes
         setTimeout(() => {
             this.winsTableBody.querySelectorAll('.row-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', () => this.updateBulkActionsBar());
+                // Remove existing listeners to prevent duplicates
+                checkbox.removeEventListener('change', this.updateBulkActionsBar);
+                checkbox.addEventListener('change', (e) => {
+                    console.log('Win checkbox changed:', e.target.checked, e.target.getAttribute('data-id'));
+                    this.updateBulkActionsBar();
+                });
             });
         }, 0);
     }
 
-    groupWins(wins, groupBy) {
-        if (groupBy === 'none') return wins;
-        
-        const grouped = {};
-        wins.forEach(win => {
-            let groupKey;
-            switch (groupBy) {
-                case 'coach':
-                    const coach = this.coaches.find(c => c.id === win.coach_id);
-                    groupKey = coach ? `${coach.first_name} ${coach.last_name}` : 'No Coach';
-                    break;
-                case 'category':
-                    groupKey = win.win_category || 'Uncategorized';
-                    break;
-                case 'date':
-                    groupKey = win.win_date ? this.formatDate(win.win_date) : 'No Date';
-                    break;
-                default:
-                    groupKey = 'Other';
-            }
-            
-            if (!grouped[groupKey]) {
-                grouped[groupKey] = [];
-            }
-            grouped[groupKey].push(win);
-        });
-        
-        // Convert back to flat array with group headers
-        const result = [];
-        Object.keys(grouped).sort().forEach(groupKey => {
-            result.push({ isGroupHeader: true, groupKey, count: grouped[groupKey].length });
-            result.push(...grouped[groupKey]);
-        });
-        
-        return result;
-    }
 
 
     formatDate(timestamp) {
@@ -877,6 +1146,7 @@ class AdminPanel {
         `;
         
         const linkedAssets = this.proof_assets.filter(asset => asset.win_id === winId);
+        const linkedMedia = this.media.filter(media => media.win_id === winId);
         
         detailPage.innerHTML = `
             <div style="position: absolute; top: 20px; right: 20px;">
@@ -900,13 +1170,21 @@ class AdminPanel {
                 </div>
                 <div>
                     <p><strong>Description:</strong> ${win.win_description || 'No description provided'}</p>
+                    <p><strong>Media URL:</strong> ${win.media_url ? `<a href="${win.media_url}" target="_blank">View Media</a>` : 'No media URL'}</p>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h3 style="color: #1f2937; margin-bottom: 10px;">Media Content</h3>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                    ${win.media_description ? `<p style="margin: 0; line-height: 1.6;">${win.media_description}</p>` : '<p style="margin: 0; color: #6b7280;">No media content provided</p>'}
                 </div>
             </div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 style="margin: 0; color: #1f2937;">Assets (${linkedAssets.length})</h2>
-                <button onclick="adminPanel.showAddAssetModal('${winId}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                    + Add Asset
+                <h2 style="margin: 0; color: #1f2937;">Media Management</h2>
+                <button onclick="adminPanel.showEditWinMediaModal('${winId}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    ✏️ Edit Media
                 </button>
             </div>
             ${linkedAssets.length === 0 ? 
@@ -934,9 +1212,180 @@ class AdminPanel {
                 </div>
                 `
             }
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 40px;">
+                <h2 style="margin: 0; color: #1f2937;">Media Items</h2>
+                <button onclick="adminPanel.addMediaToWin('${winId}')" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                    ➕ Add Media
+                </button>
+            </div>
+            ${linkedMedia.length === 0 ? 
+                '<p style="color: #6b7280;">No media items found</p>' :
+                `
+                <div style="background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f9fafb;">
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Title</th>
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Type</th>
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Platform</th>
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Description</th>
+                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${linkedMedia.map(media => `
+                                <tr style="border-bottom: 1px solid #f3f4f6;">
+                                    <td style="padding: 12px 16px; color: #1f2937; font-weight: 500;">${media.title || 'Untitled'}</td>
+                                    <td style="padding: 12px 16px; color: #6b7280;">${media.type || 'Unknown'}</td>
+                                    <td style="padding: 12px 16px; color: #6b7280;">${media.platform || 'Unknown'}</td>
+                                    <td style="padding: 12px 16px; color: #6b7280;">${media.description || 'No description'}</td>
+                                    <td style="padding: 12px 16px; color: #6b7280;">
+                                        ${media.url ? `<a href="${media.url}" target="_blank" style="color: #3b82f6; text-decoration: none;">View</a>` : 'No URL'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                `
+            }
         `;
         
         document.body.appendChild(detailPage);
+    }
+
+    showEditWinMediaModal(winId) {
+        console.log('Showing edit media modal for win:', winId);
+        const win = this.wins.find(w => w.id === winId);
+        if (!win) return;
+
+        // Create modal
+        const modal = document.createElement('div');
+        modal.id = 'editWinMediaModal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 8px; padding: 30px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #1f2937;">Edit Win Media</h3>
+                    <button onclick="adminPanel.closeEditWinMediaModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">×</button>
+                </div>
+                
+                <form id="editWinMediaForm">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Media Type *</label>
+                        <select id="editMediaType" required style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <option value="">Select Type</option>
+                            <option value="Video" ${win.media_type === 'Video' ? 'selected' : ''}>Video</option>
+                            <option value="Written" ${win.media_type === 'Written' ? 'selected' : ''}>Written</option>
+                            <option value="Interview" ${win.media_type === 'Interview' ? 'selected' : ''}>Interview</option>
+                            <option value="Screenshot" ${win.media_type === 'Screenshot' ? 'selected' : ''}>Screenshot</option>
+                            <option value="Image" ${win.media_type === 'Image' ? 'selected' : ''}>Image</option>
+                            <option value="Audio" ${win.media_type === 'Audio' ? 'selected' : ''}>Audio</option>
+                            <option value="Document" ${win.media_type === 'Document' ? 'selected' : ''}>Document</option>
+                            <option value="Other" ${win.media_type === 'Other' ? 'selected' : ''}>Other</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Media URL</label>
+                        <input type="url" id="editMediaUrl" value="${win.media_url || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" placeholder="https://example.com/media">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Media Title</label>
+                        <input type="text" id="editMediaTitle" value="${win.media_title || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" placeholder="Optional title for the media">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Media Description</label>
+                        <textarea id="editMediaDescription" rows="4" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;" placeholder="Describe the media content...">${win.media_description || ''}</textarea>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Media Format</label>
+                        <select id="editMediaFormat" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <option value="">Select Format</option>
+                            <option value="MP4" ${win.media_format === 'MP4' ? 'selected' : ''}>MP4</option>
+                            <option value="Text" ${win.media_format === 'Text' ? 'selected' : ''}>Text</option>
+                            <option value="Image" ${win.media_format === 'Image' ? 'selected' : ''}>Image</option>
+                            <option value="PDF" ${win.media_format === 'PDF' ? 'selected' : ''}>PDF</option>
+                            <option value="Audio" ${win.media_format === 'Audio' ? 'selected' : ''}>Audio</option>
+                            <option value="Other" ${win.media_format === 'Other' ? 'selected' : ''}>Other</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" onclick="adminPanel.closeEditWinMediaModal()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                            Cancel
+                        </button>
+                        <button type="submit" style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                            Save Media
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Handle form submission
+        document.getElementById('editWinMediaForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveWinMedia(winId);
+        });
+    }
+
+    closeEditWinMediaModal() {
+        const modal = document.getElementById('editWinMediaModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    async saveWinMedia(winId) {
+        const mediaData = {
+            media_type: document.getElementById('editMediaType').value,
+            media_url: document.getElementById('editMediaUrl').value,
+            media_title: document.getElementById('editMediaTitle').value,
+            media_description: document.getElementById('editMediaDescription').value,
+            media_format: document.getElementById('editMediaFormat').value
+        };
+        
+        try {
+            await this.db.collection('wins').doc(winId).update(mediaData);
+            
+            // Update local array
+            const winIndex = this.wins.findIndex(w => w.id === winId);
+            if (winIndex !== -1) {
+                this.wins[winIndex] = { ...this.wins[winIndex], ...mediaData };
+            }
+            
+            // Close modal
+            this.closeEditWinMediaModal();
+            
+            // Refresh the win detail view
+            this.showWinDetail(winId);
+            
+            console.log('Win media updated successfully');
+            alert('Win media updated successfully');
+            
+        } catch (error) {
+            console.error('Error updating win media:', error);
+            alert('Failed to update win media. Please try again.');
+        }
     }
 
     showAddAssetModal(winId) {
@@ -1064,31 +1513,69 @@ class AdminPanel {
 
     // Bulk Actions Methods
     updateBulkActionsBar() {
-        const selectedCheckboxes = document.querySelectorAll('#coachesSection .row-checkbox:checked');
+        // Check for selected items in the current section
+        let selectedCheckboxes = [];
+        let sectionType = '';
+        
+        if (this.currentSection === 'coaches') {
+            selectedCheckboxes = document.querySelectorAll('#coachesSection .row-checkbox:checked');
+            sectionType = 'coaches';
+        } else if (this.currentSection === 'wins') {
+            selectedCheckboxes = document.querySelectorAll('#winsSection .row-checkbox:checked');
+            sectionType = 'wins';
+        }
+        
         const count = selectedCheckboxes.length;
         
-        console.log('Updating bulk actions bar. Selected count:', count);
+        console.log('Updating bulk actions bar. Selected count:', count, 'Section:', sectionType);
         console.log('Bulk actions bar element:', this.bulkActionsBar);
+        console.log('Selected checkboxes:', selectedCheckboxes);
+        console.log('Current section:', this.currentSection);
         
         if (count > 0) {
             this.bulkActionsBar.style.display = 'block';
-            this.selectedCount.textContent = `${count} coach${count === 1 ? '' : 'es'} selected`;
+            // Fix pluralization - handle "coaches" and "wins" properly
+            let singularForm = '';
+            if (sectionType === 'coaches') {
+                singularForm = count === 1 ? 'coach' : 'coaches';
+            } else if (sectionType === 'wins') {
+                singularForm = count === 1 ? 'win' : 'wins';
+            }
+            this.selectedCount.textContent = `${count} ${singularForm} selected`;
+            
+            // Show/hide appropriate bulk delete button
+            if (this.currentSection === 'coaches') {
+                this.bulkDeleteBtn.style.display = 'inline-block';
+                this.bulkDeleteWinsBtn.style.display = 'none';
+            } else if (this.currentSection === 'wins') {
+                this.bulkDeleteBtn.style.display = 'none';
+                this.bulkDeleteWinsBtn.style.display = 'inline-block';
+            }
+            
             console.log('Showing bulk actions bar');
         } else {
             this.bulkActionsBar.style.display = 'none';
+            this.bulkDeleteBtn.style.display = 'none';
+            this.bulkDeleteWinsBtn.style.display = 'none';
             console.log('Hiding bulk actions bar');
         }
     }
 
     clearSelection() {
-        // Uncheck all coach checkboxes
-        document.querySelectorAll('#coachesSection .row-checkbox:checked').forEach(checkbox => {
+        // Uncheck all checkboxes in all sections
+        document.querySelectorAll('.row-checkbox:checked').forEach(checkbox => {
             checkbox.checked = false;
         });
         
-        // Uncheck select all checkbox
+        // Uncheck all select all checkboxes
         if (this.selectAllCoaches) {
             this.selectAllCoaches.checked = false;
+        }
+        if (this.selectAllWins) {
+            this.selectAllWins.checked = false;
+        }
+        if (this.selectAllMedia) {
+            this.selectAllMedia.checked = false;
         }
         
         // Update bulk actions bar (this will hide it since no items are selected)
@@ -1096,8 +1583,12 @@ class AdminPanel {
     }
 
     async bulkDeleteCoaches() {
+        console.log('bulkDeleteCoaches called');
         const selectedCheckboxes = document.querySelectorAll('#coachesSection .row-checkbox:checked');
         const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-id'));
+        
+        console.log('Selected checkboxes:', selectedCheckboxes.length);
+        console.log('Selected IDs:', selectedIds);
         
         if (selectedIds.length === 0) {
             alert('No coaches selected for deletion');
@@ -1106,7 +1597,12 @@ class AdminPanel {
         
         const confirmed = confirm(`Are you sure you want to delete ${selectedIds.length} coach${selectedIds.length === 1 ? '' : 'es'}? This action cannot be undone.`);
         
-        if (!confirmed) return;
+        if (!confirmed) {
+            console.log('Deletion cancelled by user');
+            return;
+        }
+        
+        console.log('User confirmed deletion, proceeding...');
         
         try {
             console.log('Deleting coaches:', selectedIds);
@@ -1133,6 +1629,53 @@ class AdminPanel {
         }
     }
 
+    async bulkDeleteWins() {
+        console.log('bulkDeleteWins called');
+        const selectedCheckboxes = document.querySelectorAll('#winsSection .row-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-id'));
+        
+        console.log('Selected checkboxes:', selectedCheckboxes.length);
+        console.log('Selected IDs:', selectedIds);
+        
+        if (selectedIds.length === 0) {
+            alert('No wins selected for deletion');
+            return;
+        }
+        
+        const confirmed = confirm(`Are you sure you want to delete ${selectedIds.length} win${selectedIds.length === 1 ? '' : 's'}? This action cannot be undone.`);
+        
+        if (!confirmed) {
+            console.log('Deletion cancelled by user');
+            return;
+        }
+        
+        console.log('User confirmed deletion, proceeding...');
+        
+        try {
+            console.log('Deleting wins:', selectedIds);
+            
+            // Delete wins from Firebase
+            const deletePromises = selectedIds.map(id => this.db.collection('wins').doc(id).delete());
+            await Promise.all(deletePromises);
+            
+            // Remove from local array
+            this.wins = this.wins.filter(win => !selectedIds.includes(win.id));
+            
+            // Re-render the table
+            this.renderWinsTable();
+            
+            // Clear selection
+            this.clearSelection();
+            
+            console.log('Wins deleted successfully');
+            alert(`${selectedIds.length} win${selectedIds.length === 1 ? '' : 's'} deleted successfully`);
+            
+        } catch (error) {
+            console.error('Error deleting wins:', error);
+            alert('Failed to delete wins. Please try again.');
+        }
+    }
+
     // CSV Import Methods
     showCsvImportModal() {
         this.csvImportModal.classList.add('show');
@@ -1146,6 +1689,15 @@ class AdminPanel {
         if (this.confirmImport) this.confirmImport.disabled = true;
         if (this.fileDropZone) this.fileDropZone.classList.remove('dragover');
         this.csvData = null;
+    }
+
+    resetWinsCsvImportModal() {
+        if (this.winsCsvFileInput) this.winsCsvFileInput.value = '';
+        if (this.winsSelectedFileName) this.winsSelectedFileName.style.display = 'none';
+        if (this.winsImportPreview) this.winsImportPreview.style.display = 'none';
+        if (this.confirmWinsImport) this.confirmWinsImport.disabled = true;
+        if (this.winsFileDropZone) this.winsFileDropZone.classList.remove('dragover');
+        this.winsCsvData = null;
     }
 
     handleDragOver(e) {
@@ -1341,6 +1893,260 @@ class AdminPanel {
         } catch (error) {
             console.error('Error importing coaches:', error);
             alert('Failed to import coaches. Please try again.');
+        }
+    }
+
+    // Wins CSV Import Methods
+    showWinsCsvImportModal() {
+        this.winsCsvImportModal.classList.add('show');
+    }
+
+    handleWinsFileSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            this.winsSelectedFileName.textContent = file.name;
+            this.winsSelectedFileName.style.display = 'block';
+            this.parseWinsCsvFile(file);
+        }
+    }
+
+    handleWinsFileDrop(e) {
+        e.preventDefault();
+        this.winsFileDropZone.style.borderColor = '#d1d5db';
+        this.winsFileDropZone.style.backgroundColor = '#f9fafb';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+                this.winsCsvFileInput.files = files;
+                this.winsSelectedFileName.textContent = file.name;
+                this.winsSelectedFileName.style.display = 'block';
+                this.parseWinsCsvFile(file);
+            } else {
+                alert('Please select a CSV file.');
+            }
+        }
+    }
+
+    parseWinsCsvFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const csvText = e.target.result;
+                const lines = csvText.split('\n').filter(line => line.trim());
+                
+                if (lines.length < 2) {
+                    alert('CSV file must have at least a header row and one data row.');
+                    return;
+                }
+                
+                // Improved CSV parsing to handle quoted fields properly
+                const parseCSVLine = (line) => {
+                    const result = [];
+                    let current = '';
+                    let inQuotes = false;
+                    
+                    for (let i = 0; i < line.length; i++) {
+                        const char = line[i];
+                        if (char === '"') {
+                            inQuotes = !inQuotes;
+                        } else if (char === ',' && !inQuotes) {
+                            result.push(current.trim());
+                            current = '';
+                        } else {
+                            current += char;
+                        }
+                    }
+                    result.push(current.trim());
+                    return result;
+                };
+                
+                const headers = parseCSVLine(lines[0]);
+                const data = [];
+                
+                console.log('CSV Headers:', headers);
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const values = parseCSVLine(lines[i]);
+                    const row = {};
+                    
+                    headers.forEach((header, index) => {
+                        row[header] = values[index] || '';
+                    });
+                    
+                    console.log('Parsed row:', row);
+                    data.push(row);
+                }
+                
+                this.winsCsvData = data;
+                console.log('Parsed CSV data:', data);
+                this.showWinsImportPreview(data);
+                this.confirmWinsImport.disabled = false;
+                
+            } catch (error) {
+                console.error('Error parsing CSV:', error);
+                alert('Error parsing CSV file. Please check the format.');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    showWinsImportPreview(data) {
+        const headers = Object.keys(data[0] || {});
+        let tableHTML = '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+        
+        // Header row
+        tableHTML += '<thead><tr style="background: #f3f4f6;">';
+        headers.forEach(header => {
+            tableHTML += `<th style="padding: 8px; border: 1px solid #d1d5db; text-align: left;">${header}</th>`;
+        });
+        tableHTML += '</tr></thead>';
+        
+        // Data rows (first 5)
+        tableHTML += '<tbody>';
+        data.slice(0, 5).forEach(row => {
+            tableHTML += '<tr>';
+            headers.forEach(header => {
+                const value = row[header] || '';
+                tableHTML += `<td style="padding: 8px; border: 1px solid #d1d5db;">${value}</td>`;
+            });
+            tableHTML += '</tr>';
+        });
+        tableHTML += '</tbody></table>';
+        
+        if (data.length > 5) {
+            tableHTML += `<p style="margin-top: 10px; color: #6b7280;">... and ${data.length - 5} more rows</p>`;
+        }
+        
+        this.winsPreviewTable.innerHTML = tableHTML;
+        this.winsImportPreview.style.display = 'block';
+    }
+
+    async importWins() {
+        if (!this.winsCsvData || this.winsCsvData.length === 0) {
+            alert('No data to import');
+            return;
+        }
+
+        try {
+            console.log('Importing wins:', this.winsCsvData.length);
+            
+            const batch = this.db.batch();
+            const newWins = [];
+            let importedCount = 0;
+            let skippedCount = 0;
+
+            for (const winData of this.winsCsvData) {
+                // Skip if no title (required field)
+                if (!winData.win_title || winData.win_title.trim() === '') {
+                    skippedCount++;
+                    continue;
+                }
+
+                // Debug log to see what data we're processing
+                console.log('Processing win data:', winData);
+
+                // Find coach by name (optional)
+                let coachId = null;
+                const coachName = winData.coach_name || '';
+                
+                if (coachName.trim() !== '') {
+                    console.log(`Looking for coach: "${coachName}"`);
+                    console.log(`Available coaches:`, this.coaches.map(c => `${c.first_name} ${c.last_name}`));
+                    
+                    const coach = this.coaches.find(c => {
+                        const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
+                        const match = fullName === coachName.toLowerCase();
+                        if (match) {
+                            console.log(`✅ Found coach match: "${fullName}" = "${coachName.toLowerCase()}"`);
+                        }
+                        return match;
+                    });
+                    
+                    if (coach) {
+                        coachId = coach.id;
+                        console.log(`✅ Coach assigned: ${coach.first_name} ${coach.last_name} (ID: ${coachId})`);
+                    } else {
+                        console.log(`❌ Coach not found: "${coachName}" - will import win without coach assignment`);
+                    }
+                } else {
+                    console.log(`⚠️ No coach name provided for win: "${winData.win_title}"`);
+                }
+
+                const docRef = this.db.collection('wins').doc();
+                
+                // Prepare win data - only set date if provided
+                let winDate = null;
+                if (winData.win_date && winData.win_date.trim()) {
+                    const parsedDate = new Date(winData.win_date);
+                    if (!isNaN(parsedDate.getTime())) {
+                        winDate = parsedDate;
+                    }
+                }
+
+                // Handle priority - use what's in CSV or empty string if blank
+                let priority = '';
+                if (winData.priority && winData.priority.trim() !== '') {
+                    priority = winData.priority.trim();
+                }
+
+                // Validate and set win status
+                let winStatus = 'pending'; // default
+                if (winData.win_status && ['verified', 'pending', 'rejected'].includes(winData.win_status.toLowerCase())) {
+                    winStatus = winData.win_status.toLowerCase();
+                }
+
+                const win = {
+                    win_title: winData.win_title.trim(),
+                    win_description: winData.win_description || '',
+                    win_category: winData.win_category || '',
+                    coach_id: coachId,
+                    show_on_wall: winData.show_on_wall !== 'false' && winData.show_on_wall !== false, // Default to true
+                    priority: priority,
+                    win_status: winStatus,
+                    created_at: firebase.firestore.Timestamp.fromDate(new Date())
+                };
+
+                // Only add win_date if it was provided
+                if (winDate) {
+                    win.win_date = firebase.firestore.Timestamp.fromDate(winDate);
+                }
+
+                console.log('Final win object to be saved:', win);
+                batch.set(docRef, win);
+                newWins.push({ id: docRef.id, ...win });
+                importedCount++;
+                
+                // Log successful coach assignment
+                if (coachId) {
+                    console.log(`✅ Win "${win.win_title}" assigned to coach ID: ${coachId}`);
+                } else {
+                    console.log(`⚠️ Win "${win.win_title}" has no coach assignment`);
+                }
+            }
+
+            await batch.commit();
+            
+            // Reload wins from database to ensure data consistency
+            await this.loadWins();
+            
+            // Re-render the table
+            this.renderWinsTable();
+            
+            // Close modal
+            this.winsCsvImportModal.classList.remove('show');
+            
+            console.log('Wins imported successfully');
+            let message = `${importedCount} win${importedCount === 1 ? '' : 's'} imported successfully`;
+            if (skippedCount > 0) {
+                message += `. ${skippedCount} win${skippedCount === 1 ? '' : 's'} skipped (missing title).`;
+            }
+            alert(message);
+            
+        } catch (error) {
+            console.error('Error importing wins:', error);
+            alert('Failed to import wins. Please try again.');
         }
     }
 
@@ -1684,6 +2490,12 @@ class AdminPanel {
                         <input type="date" id="editWinDate" value="${win.win_date ? new Date(win.win_date.seconds * 1000).toISOString().split('T')[0] : ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
                     </div>
                     
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Media URL</label>
+                        <input type="url" id="editWinMediaUrl" value="${win.media_url || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" placeholder="https://example.com/media">
+                    </div>
+                    
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
                         <button type="button" onclick="adminPanel.closeEditWinModal()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
                             Cancel
@@ -1720,7 +2532,8 @@ class AdminPanel {
             coach_id: document.getElementById('editWinCoach').value || null,
             win_date: document.getElementById('editWinDate').value ? 
                 firebase.firestore.Timestamp.fromDate(new Date(document.getElementById('editWinDate').value)) : 
-                null
+                null,
+            media_url: document.getElementById('editWinMediaUrl').value
         };
         
         try {
@@ -1804,6 +2617,26 @@ class AdminPanel {
                         <input type="date" id="newWinDate" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
                     </div>
                     
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Media Type</label>
+                        <select id="newWinMediaType" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                            <option value="">Select Type</option>
+                            <option value="Video">Video</option>
+                            <option value="Written">Written</option>
+                            <option value="Interview">Interview</option>
+                            <option value="Screenshot">Screenshot</option>
+                            <option value="Image">Image</option>
+                            <option value="Audio">Audio</option>
+                            <option value="Document">Document</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Media URL</label>
+                        <input type="url" id="newWinMediaUrl" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" placeholder="https://example.com/media">
+                    </div>
+                    
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
                         <button type="button" onclick="adminPanel.closeAddWinModal()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
                             Cancel
@@ -1841,6 +2674,7 @@ class AdminPanel {
             win_date: document.getElementById('newWinDate').value ? 
                 firebase.firestore.Timestamp.fromDate(new Date(document.getElementById('newWinDate').value)) : 
                 null,
+            media_url: document.getElementById('newWinMediaUrl').value,
             created_at: firebase.firestore.Timestamp.fromDate(new Date())
         };
         
@@ -1882,25 +2716,18 @@ class AdminPanel {
             if (header) {
                 header.style.display = checkbox.checked ? 'table-cell' : 'none';
             }
+            
+            // Also update all data cells in the table
+            const cells = document.querySelectorAll(`td.col-${column}`);
+            cells.forEach(cell => {
+                cell.style.display = checkbox.checked ? 'table-cell' : 'none';
+            });
         });
         this.closeWinsColumnModal();
+        // Re-render the table to ensure proper alignment
+        this.renderWinsTable();
     }
 
-    // Group by functionality
-    showGroupByModal() {
-        this.groupByModal.classList.add('show');
-    }
-
-    closeGroupByModal() {
-        this.groupByModal.classList.remove('show');
-    }
-
-    applyGroupByChanges() {
-        const selectedGroupBy = this.groupByModal.querySelector('input[name="groupBy"]:checked').value;
-        this.currentGroupBy = selectedGroupBy;
-        this.closeGroupByModal();
-        this.renderCurrentSection();
-    }
 
     addCoach() {
         console.log('Adding new coach');
@@ -2064,6 +2891,600 @@ class AdminPanel {
         this.closeDetailViews();
         this.resetToCleanState();
         document.getElementById('coachesSection').classList.add('active');
+    }
+
+    toggleFilters() {
+        if (this.currentSection === 'coaches') {
+            const isVisible = this.coachesFilters.style.display !== 'none';
+            this.coachesFilters.style.display = isVisible ? 'none' : 'block';
+            this.toggleFiltersBtn.textContent = isVisible ? 'Filters' : 'Hide Filters';
+        } else if (this.currentSection === 'media') {
+            const isVisible = this.mediaFilters.style.display !== 'none';
+            this.mediaFilters.style.display = isVisible ? 'none' : 'block';
+            this.toggleFiltersBtn.textContent = isVisible ? 'Filters' : 'Hide Filters';
+        }
+    }
+
+    applyCoachesFilters(data = this.coaches) {
+        let filteredData = [...data];
+
+        // Wins count filter
+        const winsCountFilter = this.winsCountFilter.value;
+        if (winsCountFilter) {
+            filteredData = filteredData.filter(coach => {
+                const coachWins = this.wins.filter(win => win.coach_id === coach.id);
+                const winsCount = coachWins.length;
+                
+                switch (winsCountFilter) {
+                    case '0': return winsCount === 0;
+                    case '1': return winsCount === 1;
+                    case '2-5': return winsCount >= 2 && winsCount <= 5;
+                    case '6-10': return winsCount >= 6 && winsCount <= 10;
+                    case '10+': return winsCount > 10;
+                    default: return true;
+                }
+            });
+        }
+
+        // Join date filter
+        const joinDateFilter = this.joinDateFilter.value;
+        if (joinDateFilter) {
+            const now = new Date();
+            const filterDate = new Date();
+            
+            switch (joinDateFilter) {
+                case 'last-week':
+                    filterDate.setDate(now.getDate() - 7);
+                    break;
+                case 'last-month':
+                    filterDate.setMonth(now.getMonth() - 1);
+                    break;
+                case 'last-3-months':
+                    filterDate.setMonth(now.getMonth() - 3);
+                    break;
+                case 'last-year':
+                    filterDate.setFullYear(now.getFullYear() - 1);
+                    break;
+            }
+            
+            filteredData = filteredData.filter(coach => {
+                if (!coach.join_date) return false;
+                const joinDate = coach.join_date.seconds ? new Date(coach.join_date.seconds * 1000) : new Date(coach.join_date);
+                return joinDate >= filterDate;
+            });
+        }
+
+        // Most recent win filter
+        const recentWinFilter = this.recentWinFilter.value;
+        if (recentWinFilter) {
+            const now = new Date();
+            const filterDate = new Date();
+            
+            switch (recentWinFilter) {
+                case 'last-week':
+                    filterDate.setDate(now.getDate() - 7);
+                    break;
+                case 'last-month':
+                    filterDate.setMonth(now.getMonth() - 1);
+                    break;
+                case 'last-3-months':
+                    filterDate.setMonth(now.getMonth() - 3);
+                    break;
+                case 'last-year':
+                    filterDate.setFullYear(now.getFullYear() - 1);
+                    break;
+                case 'no-wins':
+                    return filteredData.filter(coach => {
+                        const coachWins = this.wins.filter(win => win.coach_id === coach.id);
+                        return coachWins.length === 0;
+                    });
+            }
+            
+            if (recentWinFilter !== 'no-wins') {
+                filteredData = filteredData.filter(coach => {
+                    const coachWins = this.wins.filter(win => win.coach_id === coach.id);
+                    if (coachWins.length === 0) return false;
+                    
+                    const mostRecentWin = coachWins.reduce((latest, win) => {
+                        const winTime = win.win_date?.seconds || 0;
+                        const latestTime = latest.win_date?.seconds || 0;
+                        return winTime > latestTime ? win : latest;
+                    });
+                    
+                    const mostRecentDate = mostRecentWin.win_date?.seconds ? new Date(mostRecentWin.win_date.seconds * 1000) : new Date(mostRecentWin.win_date);
+                    return mostRecentDate >= filterDate;
+                });
+            }
+        }
+
+        // Media type filter
+        const mediaTypeFilter = this.coachMediaTypeFilter.value;
+        if (mediaTypeFilter) {
+            if (mediaTypeFilter === 'no-media') {
+                filteredData = filteredData.filter(coach => {
+                    const coachWins = this.wins.filter(win => win.coach_id === coach.id);
+                    return coachWins.every(win => !win.media_url);
+                });
+            } else {
+                filteredData = filteredData.filter(coach => {
+                    const coachWins = this.wins.filter(win => win.coach_id === coach.id);
+                    return coachWins.some(win => win.media_url);
+                });
+            }
+        }
+
+        return filteredData;
+    }
+
+    // Media methods
+    async loadMedia() {
+        try {
+            console.log('Loading media...');
+            const snapshot = await this.db.collection('media').get();
+            this.media = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            console.log('Media loaded:', this.media.length);
+        } catch (error) {
+            console.error('Error loading media:', error);
+            this.media = [];
+        }
+    }
+
+    renderMediaTable() {
+        console.log('Rendering media table, count:', this.media.length);
+        
+        if (this.media.length === 0) {
+            this.mediaTableBody.innerHTML = '<tr><td colspan="4" class="loading">Loading media...</td></tr>';
+            return;
+        }
+
+        let data = this.media;
+
+        // Apply search filter
+        if (this.searchTerm) {
+            data = data.filter(media => {
+                const win = this.wins.find(w => w.id === media.win_id);
+                const coach = win ? this.coaches.find(c => c.id === win.coach_id) : null;
+                const winTitle = win ? win.win_title : '';
+                const coachName = coach ? `${coach.first_name} ${coach.last_name}` : '';
+                
+                return media.title?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                       media.description?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                       media.content?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                       winTitle?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                       coachName?.toLowerCase().includes(this.searchTerm.toLowerCase());
+            });
+        }
+
+        // Apply media filters
+        data = this.applyMediaFilters(data);
+
+        if (data.length === 0) {
+            this.mediaTableBody.innerHTML = '<tr><td colspan="4" class="no-data">No media found</td></tr>';
+            return;
+        }
+
+        this.mediaTableBody.innerHTML = data.map(media => {
+            const win = this.wins.find(w => w.id === media.win_id);
+            const coach = win ? this.coaches.find(c => c.id === win.coach_id) : null;
+            const winTitle = win ? win.win_title : 'Unassigned';
+            const coachName = coach ? `${coach.first_name} ${coach.last_name}` : '';
+            
+            return `
+                <tr>
+                    <td class="checkbox-col">
+                        <input type="checkbox" class="row-checkbox" data-id="${media.id}">
+                    </td>
+                    <td class="col-title">
+                        <span class="media-title-link" data-media-id="${media.id}" style="cursor: pointer; color: #1f2937; text-decoration: none; font-weight: 500;">
+                            ${media.title || 'Untitled'}
+                        </span>
+                    </td>
+                    <td class="col-win">
+                        <span class="win-link" data-win-id="${media.win_id || ''}" style="cursor: pointer; color: #1f2937; text-decoration: none;">
+                            ${winTitle}
+                            ${coachName ? `<br><small style="color: #6b7280;">${coachName}</small>` : ''}
+                        </span>
+                    </td>
+                    <td class="col-type">${media.type || 'Unknown'}</td>
+                    <td class="col-platform" style="display: none;">${media.platform || 'Unknown'}</td>
+                    <td class="col-duration" style="display: none;">${media.duration || '-'}</td>
+                    <td class="col-created" style="display: none;">${this.formatDate(media.created_at)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        // Add click handlers for win links
+        this.mediaTableBody.querySelectorAll('.win-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const winId = link.getAttribute('data-win-id');
+                const mediaId = link.closest('tr').querySelector('.row-checkbox').getAttribute('data-id');
+                console.log('Win link clicked, winId:', winId, 'mediaId:', mediaId);
+                
+                if (winId && winId !== '') {
+                    // If assigned to a win, show win detail
+                    this.showWinDetail(winId);
+                } else {
+                    // If unassigned, show win selection modal
+                    this.showWinSelectionModal(mediaId);
+                }
+            });
+        });
+
+        // Add click handlers for media title links
+        this.mediaTableBody.querySelectorAll('.media-title-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const mediaId = link.getAttribute('data-media-id');
+                console.log('Media title clicked, mediaId:', mediaId);
+                this.showEditMediaModal(mediaId);
+            });
+        });
+    }
+
+    applyMediaFilters(data = null) {
+        if (data === null) {
+            data = this.media;
+        }
+
+        // Type filter
+        const typeFilter = this.mediaTypeFilter.value;
+        if (typeFilter) {
+            data = data.filter(media => media.type === typeFilter);
+        }
+
+        // Platform filter
+        const platformFilter = this.mediaPlatformFilter.value;
+        if (platformFilter) {
+            data = data.filter(media => media.platform === platformFilter);
+        }
+
+        // Assignment filter
+        const assignmentFilter = this.mediaAssignmentFilter.value;
+        if (assignmentFilter === 'assigned') {
+            data = data.filter(media => media.win_id);
+        } else if (assignmentFilter === 'unassigned') {
+            data = data.filter(media => !media.win_id);
+        }
+
+        return data;
+    }
+
+    showMediaColumnModal() {
+        this.mediaColumnModal.classList.add('show');
+    }
+
+    applyMediaColumnChanges() {
+        const checkboxes = this.mediaColumnModal.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            const column = checkbox.getAttribute('data-column');
+            const isChecked = checkbox.checked;
+            
+            // Update header visibility
+            const header = document.querySelector(`th.col-${column}`);
+            if (header) {
+                header.style.display = isChecked ? '' : 'none';
+            }
+            
+            // Update data cell visibility
+            const cells = document.querySelectorAll(`td.col-${column}`);
+            cells.forEach(cell => {
+                cell.style.display = isChecked ? '' : 'none';
+            });
+        });
+        
+        this.mediaColumnModal.classList.remove('show');
+        this.renderMediaTable();
+    }
+
+    addMedia() {
+        // Populate win dropdown
+        this.populateWinDropdown('newMediaWin');
+        this.addMediaModal.classList.add('show');
+    }
+
+    bulkUpload() {
+        // Populate win dropdown
+        this.populateWinDropdown('bulkImageWin');
+        this.bulkUploadModal.classList.add('show');
+    }
+
+    populateWinDropdown(selectId) {
+        const select = document.getElementById(selectId);
+        select.innerHTML = '<option value="">Select Win (optional)</option>';
+        
+        this.wins.forEach(win => {
+            const coach = this.coaches.find(c => c.id === win.coach_id);
+            const coachName = coach ? `${coach.first_name} ${coach.last_name}` : 'Unknown Coach';
+            const option = document.createElement('option');
+            option.value = win.id;
+            option.textContent = `${win.win_title} (${coachName})`;
+            select.appendChild(option);
+        });
+    }
+
+    async saveNewMediaItem() {
+        const title = document.getElementById('newMediaTitle').value;
+        const type = document.getElementById('newMediaType').value;
+        const platform = document.getElementById('newMediaPlatform').value;
+        const url = document.getElementById('newMediaUrl').value;
+        const description = document.getElementById('newMediaDescription').value;
+        const content = document.getElementById('newMediaContent').value;
+        const winId = document.getElementById('newMediaWin').value;
+
+        if (!title || !type) {
+            alert('Please fill in required fields');
+            return;
+        }
+
+        try {
+            const mediaData = {
+                title,
+                type,
+                platform: platform || 'Database',
+                url: url || '',
+                description: description || '',
+                content: content || '',
+                win_id: winId || null,
+                created_at: new Date()
+            };
+
+            await this.db.collection('media').add(mediaData);
+            
+            // Reload media data
+            await this.loadMedia();
+            this.renderCurrentSection();
+            
+            // Close modal and reset form
+            this.addMediaModal.classList.remove('show');
+            document.getElementById('addMediaForm').reset();
+            
+            console.log('Media saved successfully');
+        } catch (error) {
+            console.error('Error saving media:', error);
+            alert('Error saving media');
+        }
+    }
+
+    async processBulkImageUpload() {
+        const files = document.getElementById('bulkImageFiles').files;
+        const type = document.getElementById('bulkImageType').value;
+        const winId = document.getElementById('bulkImageWin').value;
+
+        if (files.length === 0 || !type) {
+            alert('Please select files and type');
+            return;
+        }
+
+        try {
+            for (let file of files) {
+                // For now, we'll just create media records with the filename as title
+                // In a real implementation, you'd upload to Firebase Storage first
+                const mediaData = {
+                    title: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
+                    type,
+                    platform: 'Firebase Storage',
+                    url: '', // Would be set after upload
+                    description: `Bulk uploaded ${type.toLowerCase()}`,
+                    content: '',
+                    win_id: winId || null,
+                    created_at: new Date()
+                };
+
+                await this.db.collection('media').add(mediaData);
+            }
+            
+            // Reload media data
+            await this.loadMedia();
+            this.renderCurrentSection();
+            
+            // Close modal and reset form
+            this.bulkUploadModal.classList.remove('show');
+            document.getElementById('bulkImageFiles').value = '';
+            document.getElementById('bulkImageType').value = '';
+            document.getElementById('bulkImageWin').value = '';
+            
+            console.log('Bulk upload completed');
+        } catch (error) {
+            console.error('Error in bulk upload:', error);
+            alert('Error uploading images');
+        }
+    }
+
+    addMediaToWin(winId) {
+        // Populate win dropdown with the specific win pre-selected
+        this.populateWinDropdown('newMediaWin');
+        document.getElementById('newMediaWin').value = winId;
+        this.addMediaModal.classList.add('show');
+    }
+
+    showWinSelectionModal(mediaId) {
+        this.currentMediaId = mediaId;
+        this.selectedWinId = null;
+        this.winSearchInput.value = '';
+        this.assignMediaToWin.disabled = true;
+        this.populateWinsList();
+        this.winSelectionModal.classList.add('show');
+    }
+
+    populateWinsList() {
+        this.winsList.innerHTML = this.wins.map(win => {
+            const coach = this.coaches.find(c => c.id === win.coach_id);
+            const coachName = coach ? `${coach.first_name} ${coach.last_name}` : 'Unknown Coach';
+            return `
+                <div class="win-option" data-win-id="${win.id}" style="padding: 16px; border-bottom: 1px solid #e5e7eb; cursor: pointer; transition: all 0.2s; hover:background-color: #f3f4f6;">
+                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px; font-size: 15px;">${win.win_title || 'Untitled Win'}</div>
+                    <div style="font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 6px;">
+                        <span style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">👤</span>
+                        ${coachName}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add click handlers for win options
+        this.winsList.querySelectorAll('.win-option').forEach(option => {
+            option.addEventListener('click', (e) => {
+                // Remove previous selection
+                this.winsList.querySelectorAll('.win-option').forEach(opt => {
+                    opt.style.backgroundColor = '';
+                    opt.style.borderLeft = '';
+                });
+                
+                // Select this option
+                option.style.backgroundColor = '#eff6ff';
+                option.style.borderLeft = '4px solid #3b82f6';
+                this.selectedWinId = option.getAttribute('data-win-id');
+                this.assignMediaToWin.disabled = false;
+            });
+        });
+    }
+
+    filterWinsForSelection() {
+        const searchTerm = this.winSearchInput.value.toLowerCase();
+        const winOptions = this.winsList.querySelectorAll('.win-option');
+        
+        winOptions.forEach(option => {
+            const winTitle = option.querySelector('div:first-child').textContent.toLowerCase();
+            const coachName = option.querySelector('div:last-child').textContent.toLowerCase();
+            const isVisible = winTitle.includes(searchTerm) || coachName.includes(searchTerm);
+            option.style.display = isVisible ? 'block' : 'none';
+        });
+    }
+
+    async assignSelectedWinToMedia() {
+        if (!this.selectedWinId || !this.currentMediaId) return;
+
+        try {
+            await this.db.collection('media').doc(this.currentMediaId).update({
+                win_id: this.selectedWinId
+            });
+            
+            // Reload media data and refresh the table
+            await this.loadMedia();
+            this.renderCurrentSection();
+            
+            // Close modal
+            this.winSelectionModal.classList.remove('show');
+            
+            console.log('Media assigned to win successfully');
+        } catch (error) {
+            console.error('Error assigning media to win:', error);
+            alert('Error assigning media to win');
+        }
+    }
+
+    async unassignMediaFromWinAction() {
+        if (!this.currentMediaId) return;
+
+        try {
+            await this.db.collection('media').doc(this.currentMediaId).update({
+                win_id: null
+            });
+            
+            // Reload media data and refresh the table
+            await this.loadMedia();
+            this.renderCurrentSection();
+            
+            // Close modal
+            this.winSelectionModal.classList.remove('show');
+            
+            console.log('Media unassigned from win successfully');
+        } catch (error) {
+            console.error('Error unassigning media from win:', error);
+            alert('Error unassigning media from win');
+        }
+    }
+
+    showEditMediaModal(mediaId) {
+        this.currentEditMediaId = mediaId;
+        const media = this.media.find(m => m.id === mediaId);
+        if (!media) return;
+
+        // Populate form fields
+        document.getElementById('editMediaTitle').value = media.title || '';
+        document.getElementById('editMediaType').value = media.type || '';
+        document.getElementById('editMediaPlatform').value = media.platform || '';
+        document.getElementById('editMediaUrl').value = media.url || '';
+        document.getElementById('editMediaDescription').value = media.description || '';
+        document.getElementById('editMediaContent').value = media.content || '';
+
+        // Populate win dropdown
+        this.populateWinDropdown('editMediaWin');
+        document.getElementById('editMediaWin').value = media.win_id || '';
+
+        this.editMediaModal.classList.add('show');
+    }
+
+    async saveEditMediaItem() {
+        const title = document.getElementById('editMediaTitle').value;
+        const type = document.getElementById('editMediaType').value;
+        const platform = document.getElementById('editMediaPlatform').value;
+        const url = document.getElementById('editMediaUrl').value;
+        const description = document.getElementById('editMediaDescription').value;
+        const content = document.getElementById('editMediaContent').value;
+        const winId = document.getElementById('editMediaWin').value;
+
+        if (!title || !type) {
+            alert('Please fill in required fields');
+            return;
+        }
+
+        try {
+            const mediaData = {
+                title,
+                type,
+                platform: platform || 'Database',
+                url: url || '',
+                description: description || '',
+                content: content || '',
+                win_id: winId || null,
+                updated_at: new Date()
+            };
+
+            await this.db.collection('media').doc(this.currentEditMediaId).update(mediaData);
+            
+            // Reload media data
+            await this.loadMedia();
+            this.renderCurrentSection();
+            
+            // Close modal
+            this.editMediaModal.classList.remove('show');
+            
+            console.log('Media updated successfully');
+        } catch (error) {
+            console.error('Error updating media:', error);
+            alert('Error updating media');
+        }
+    }
+
+    async deleteMediaItem() {
+        if (!this.currentEditMediaId) return;
+
+        if (!confirm('Are you sure you want to delete this media item? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            await this.db.collection('media').doc(this.currentEditMediaId).delete();
+            
+            // Reload media data
+            await this.loadMedia();
+            this.renderCurrentSection();
+            
+            // Close modal
+            this.editMediaModal.classList.remove('show');
+            
+            console.log('Media deleted successfully');
+        } catch (error) {
+            console.error('Error deleting media:', error);
+            alert('Error deleting media');
+        }
     }
 }
 
