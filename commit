@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Simple commit script for Proof Wall project
+echo "🚀 Proof Wall - Auto Commit & Deploy"
+echo "=================================="
+
+# Navigate to project directory
+cd "$(dirname "$0")"
+
+# Add all changes
+echo "📁 Adding all changes..."
+git add .
+
+# Commit with timestamp
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+COMMIT_MSG="Update Proof Wall - $TIMESTAMP"
+
+echo "💾 Committing changes..."
+git commit -m "$COMMIT_MSG"
+
+# Push to GitHub
+echo "☁️ Pushing to GitHub..."
+git push origin main
+
+echo ""
+echo "✅ Done! Your changes are now live!"
+echo "🌐 Check your Netlify site for updates"
+echo "📧 Changes will be deployed automatically"

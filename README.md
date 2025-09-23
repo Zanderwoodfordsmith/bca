@@ -161,17 +161,15 @@ Once you've confirmed everything works, you can delete the `proof_assets` collec
 ##Improvements
 
 ###Issues
-Make sure table displays properly after selecting other columns wins (might be when updating), when i added type and category column the category column went before data but the dates stayed aligned to the category column.  
+
 ####Data infrastructure
-✅ Make wins have their own media, doesn't have to be part of proof assets for simplicity, Update database and tell me what to change in firebase
 
 
 
 ###Admin
 
 #####Coaches
-1. Add filter to coaches; Filter by Number of wins (more or less than), join date, most recent win (Shoudl be able to do before or after), type of win (so it would look at which couches don't have e.g. video)
-2. Remove group by button and functiomality
+1
 
 
 #####Single Coaches Page
@@ -180,17 +178,11 @@ Make sure table displays properly after selecting other columns wins (might be w
 ####Wins
 
 #####Wins List
-1. Have win title be the first column and coach the second column
-2. When click on win title it open the win (do not need it to be blue or underlined
-3. By default show category e.g. 1st clients and type e.g. video
-3. Make sure table renders properly
+
 
 #####Single Win page
-1. Display the media 
-2. Allow for files to be uploaded and type e.g. video screenshot selected. 
-3. Show the content field 
+1
 
 ###Proof Wall
-- do not show the names of the files. 
 - add a keyword search
 - add a type search )this should filter by the new wins media type e.g. video, written, interview, screenshot,
