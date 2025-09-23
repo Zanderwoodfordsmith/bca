@@ -3506,7 +3506,9 @@ class AdminPanel {
             const winTitle = win ? win.win_title : 'Unassigned';
             const coachName = coach ? `${coach.first_name} ${coach.last_name}` : 'No Coach';
             const isImage = media.type === 'Screenshot' || media.type === 'Image';
-            const previewHtml = isImage && media.url ? `<img src="${media.url}" alt="preview" class="media-preview-thumb" />` : '<div class="media-preview-thumb" style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;">—</div>';
+            const previewHtml = isImage && media.url ? 
+                `<img src="${media.url}" alt="preview" class="media-preview-thumb" style="width:64px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;" />` : 
+                '<div class="media-preview-thumb" style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;width:64px;height:40px;background:#f3f4f6;border-radius:6px;border:1px solid #e5e7eb;">—</div>';
             
             return `
                 <tr>
@@ -3885,22 +3887,22 @@ class AdminPanel {
                 console.log('Processing file:', file.name);
                 console.log('Extracted coach name:', coachName);
                 console.log('Extracted title:', title);
+                console.log('Available coaches:', this.coaches.map(c => `${c.first_name} ${c.last_name}`));
                 
                 // Find matching coach
                 const coach = coachName ? this.findCoachByName(coachName) : null;
                 
-                // Extract text if it's an image (with option to skip)
+                // Extract text if it's an image
                 statusSpan.textContent = 'Extracting text...';
                 let extractedText = '';
                 if (file.type.startsWith('image/') && (type === 'Screenshot' || type === 'Image')) {
                     try {
                         console.log('Starting OCR for file:', file.name);
-                        // Skip OCR for now to test upload - uncomment next line to enable OCR
-                        // extractedText = await Promise.race([
-                        //     this.extractTextFromImage(file),
-                        //     new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout after 30 seconds')), 30000))
-                        // ]);
-                        console.log('OCR skipped for file:', file.name);
+                        extractedText = await Promise.race([
+                            this.extractTextFromImage(file),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout after 30 seconds')), 30000))
+                        ]);
+                        console.log('OCR completed for file:', file.name, 'Text length:', extractedText.length);
                     } catch (ocrError) {
                         console.error('OCR failed for file:', file.name, ocrError);
                         extractedText = ''; // Continue without OCR if it fails
