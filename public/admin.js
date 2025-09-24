@@ -60,6 +60,7 @@ class AdminPanel {
         this.closeColumnModalBtn = document.getElementById('closeColumnModal');
         this.applyColumns = document.getElementById('applyColumns');
         this.viewProofWall = document.getElementById('viewProofWall');
+        this.updateWinsVisibility = document.getElementById('updateWinsVisibility');
         this.addCoachBtn = document.getElementById('addCoachBtn');
         this.addWinBtn = document.getElementById('addWinBtn');
         this.addMediaBtn = document.getElementById('addMediaBtn');
@@ -192,6 +193,7 @@ class AdminPanel {
         
         // Other buttons
         this.viewProofWall.addEventListener('click', () => window.open('index.html', '_blank'));
+        this.updateWinsVisibility.addEventListener('click', () => this.updateExistingWinsToShowOnWall());
         this.addCoachBtn.addEventListener('click', () => this.addCoach());
         this.addWinBtn.addEventListener('click', () => this.addWin());
         this.addMediaBtn.addEventListener('click', () => this.addMedia());
@@ -223,6 +225,13 @@ class AdminPanel {
         this.winSearchInput.addEventListener('input', () => this.filterWinsForSelection());
         this.assignMediaToWin.addEventListener('click', () => this.assignSelectedWinToMedia());
         this.unassignMediaFromWin.addEventListener('click', () => this.unassignMediaFromWinAction());
+        
+        // Create new win button (will be added dynamically)
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'createNewWin') {
+                this.createNewWinFromMedia();
+            }
+        });
         
         // Edit media modal
         this.closeEditMediaModal.addEventListener('click', () => this.editMediaModal.classList.remove('show'));
@@ -1166,7 +1175,7 @@ class AdminPanel {
         const mainContent = document.querySelector('.admin-main');
         mainContent.style.display = 'none';
         
-        // Create detail page
+        // Create modern detail page
         const detailPage = document.createElement('div');
         detailPage.id = 'coachDetailPage';
         detailPage.style.cssText = `
@@ -1175,13 +1184,17 @@ class AdminPanel {
             left: 250px;
             width: calc(100% - 250px);
             height: 100%;
-            background: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             z-index: 1000;
             overflow-y: auto;
-            padding: 20px;
+            padding: 0;
         `;
         
         const coachWins = this.wins.filter(win => win.coach_id === coachId);
+        const coachMedia = this.media.filter(media => {
+            const win = this.wins.find(w => w.id === media.win_id);
+            return win && win.coach_id === coachId;
+        });
         
         detailPage.innerHTML = `
             <div style="position: absolute; top: 20px; right: 20px;">
@@ -1301,6 +1314,44 @@ class AdminPanel {
         `;
         
         document.body.appendChild(detailPage);
+    }
+
+    // Function to update existing wins to show on wall
+    async updateExistingWinsToShowOnWall() {
+        try {
+            console.log('Updating existing wins to show on wall...');
+            
+            // Get all wins that don't have show_on_wall set
+            const winsSnapshot = await this.db.collection('wins').get();
+            const batch = this.db.batch();
+            let updateCount = 0;
+            
+            winsSnapshot.docs.forEach(doc => {
+                const winData = doc.data();
+                // Update if undefined, null, or false
+                if (winData.show_on_wall === undefined || winData.show_on_wall === null || winData.show_on_wall === false) {
+                    batch.update(doc.ref, { show_on_wall: true });
+                    updateCount++;
+                }
+            });
+            
+            if (updateCount > 0) {
+                await batch.commit();
+                console.log(`Updated ${updateCount} wins to show on wall`);
+                alert(`Updated ${updateCount} existing wins to show on the proof wall!`);
+                
+                // Reload data
+                await this.loadWins();
+                this.renderCurrentSection();
+            } else {
+                console.log('All wins already have show_on_wall set');
+                alert('All wins already have visibility settings configured.');
+            }
+            
+        } catch (error) {
+            console.error('Error updating wins:', error);
+            alert('Error updating wins. Please try again.');
+        }
     }
 
     showWinDetail(winId) {
@@ -2920,10 +2971,19 @@ class AdminPanel {
                         <input type="date" id="editWinDate" value="${win.win_date ? new Date(win.win_date.seconds * 1000).toISOString().split('T')[0] : ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
                     </div>
                     
-                    
                     <div style="margin-bottom: 20px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Media URL</label>
                         <input type="url" id="editWinMediaUrl" value="${win.media_url || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" placeholder="https://example.com/media">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <input type="checkbox" id="editWinShowOnWall" ${win.show_on_wall !== false ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: #3b82f6;">
+                            <div>
+                                <label for="editWinShowOnWall" style="font-weight: 600; color: #374151; cursor: pointer; margin: 0;">Show on Proof Wall</label>
+                                <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">Display this win on the public proof wall</p>
+                            </div>
+                        </div>
                     </div>
                     
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -2963,7 +3023,8 @@ class AdminPanel {
             win_date: document.getElementById('editWinDate').value ? 
                 firebase.firestore.Timestamp.fromDate(new Date(document.getElementById('editWinDate').value)) : 
                 null,
-            media_url: document.getElementById('editWinMediaUrl').value
+            media_url: document.getElementById('editWinMediaUrl').value,
+            show_on_wall: document.getElementById('editWinShowOnWall').checked
         };
         
         try {
@@ -3067,6 +3128,16 @@ class AdminPanel {
                         <input type="url" id="newWinMediaUrl" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" placeholder="https://example.com/media">
                     </div>
                     
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <input type="checkbox" id="newWinShowOnWall" checked style="width: 18px; height: 18px; accent-color: #3b82f6;">
+                            <div>
+                                <label for="newWinShowOnWall" style="font-weight: 600; color: #374151; cursor: pointer; margin: 0;">Show on Proof Wall</label>
+                                <p style="margin: 4px 0 0 0; font-size: 13px; color: #6b7280;">Display this win on the public proof wall</p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div style="display: flex; gap: 10px; justify-content: flex-end;">
                         <button type="button" onclick="adminPanel.closeAddWinModal()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
                             Cancel
@@ -3105,6 +3176,7 @@ class AdminPanel {
                 firebase.firestore.Timestamp.fromDate(new Date(document.getElementById('newWinDate').value)) : 
                 null,
             media_url: document.getElementById('newWinMediaUrl').value,
+            show_on_wall: document.getElementById('newWinShowOnWall').checked,
             created_at: firebase.firestore.Timestamp.fromDate(new Date())
         };
         
@@ -4065,15 +4137,32 @@ class AdminPanel {
     }
 
     populateWinsList() {
+        // Update stats
+        this.updateWinStats();
+        
         this.winsList.innerHTML = this.wins.map(win => {
             const coach = this.coaches.find(c => c.id === win.coach_id);
             const coachName = coach ? `${coach.first_name} ${coach.last_name}` : 'Unknown Coach';
+            const winDate = win.win_date ? new Date(win.win_date.seconds * 1000).toLocaleDateString() : 'No Date';
+            const mediaCount = this.media.filter(m => m.win_id === win.id).length;
+            
             return `
                 <div class="win-option" data-win-id="${win.id}" style="padding: 16px; border-bottom: 1px solid #e5e7eb; cursor: pointer; transition: all 0.2s; hover:background-color: #f3f4f6;">
-                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px; font-size: 15px;">${win.win_title || 'Untitled Win'}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div style="font-weight: 600; color: #1f2937; font-size: 15px; flex: 1;">${win.win_title || 'Untitled Win'}</div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500;">
+                                📎 ${mediaCount}
+                            </span>
+                            <span style="background: #f3f4f6; color: #6b7280; padding: 2px 8px; border-radius: 12px; font-size: 11px;">
+                                ${winDate}
+                            </span>
+                        </div>
+                    </div>
                     <div style="font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 6px;">
                         <span style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500;">👤</span>
                         ${coachName}
+                        ${win.win_category ? `<span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 8px;">${win.win_category}</span>` : ''}
                     </div>
                 </div>
             `;
@@ -4086,15 +4175,33 @@ class AdminPanel {
                 this.winsList.querySelectorAll('.win-option').forEach(opt => {
                     opt.style.backgroundColor = '';
                     opt.style.borderLeft = '';
+                    opt.style.boxShadow = '';
                 });
                 
                 // Select this option
                 option.style.backgroundColor = '#eff6ff';
                 option.style.borderLeft = '4px solid #3b82f6';
+                option.style.boxShadow = '0 2px 8px rgba(59, 130, 246, 0.15)';
                 this.selectedWinId = option.getAttribute('data-win-id');
                 this.assignMediaToWin.disabled = false;
             });
         });
+    }
+
+    updateWinStats() {
+        const totalWins = this.wins.length;
+        const searchTerm = this.winSearchInput.value.toLowerCase();
+        const filteredWins = this.wins.filter(win => {
+            const coach = this.coaches.find(c => c.id === win.coach_id);
+            const coachName = coach ? `${coach.first_name} ${coach.last_name}` : '';
+            return win.win_title.toLowerCase().includes(searchTerm) || 
+                   coachName.toLowerCase().includes(searchTerm);
+        });
+        const unassignedWins = this.wins.filter(win => !win.coach_id).length;
+        
+        document.getElementById('totalWinsCount').textContent = totalWins;
+        document.getElementById('filteredWinsCount').textContent = filteredWins.length;
+        document.getElementById('unassignedWinsCount').textContent = unassignedWins;
     }
 
     filterWinsForSelection() {
@@ -4107,6 +4214,9 @@ class AdminPanel {
             const isVisible = winTitle.includes(searchTerm) || coachName.includes(searchTerm);
             option.style.display = isVisible ? 'block' : 'none';
         });
+        
+        // Update stats after filtering
+        this.updateWinStats();
     }
 
     async assignSelectedWinToMedia() {
@@ -4151,6 +4261,24 @@ class AdminPanel {
             console.error('Error unassigning media from win:', error);
             alert('Error unassigning media from win');
         }
+    }
+
+    createNewWinFromMedia() {
+        // Close the win selection modal
+        this.winSelectionModal.classList.remove('show');
+        
+        // Get the current media item
+        const mediaItem = this.media.find(m => m.id === this.currentMediaId);
+        if (!mediaItem) return;
+        
+        // Pre-populate the new win form with media title
+        const winTitle = document.getElementById('newWinTitle');
+        if (winTitle) {
+            winTitle.value = mediaItem.title || 'New Win';
+        }
+        
+        // Show the new win modal
+        this.showNewWinModal();
     }
 
     showEditMediaModal(mediaId) {

@@ -42,6 +42,7 @@
             </nav>
             <div class="sidebar-footer">
                 <button id="viewProofWall" class="btn btn-primary">View Proof Wall</button>
+                <button id="updateWinsVisibility" class="btn btn-secondary" style="margin-top: 8px;">Update Wins Visibility</button>
             </div>
         </aside>
 
@@ -574,14 +575,15 @@
 
     <!-- Win Selection Modal -->
     <div id="winSelectionModal" class="modal">
-        <div class="modal-content" style="max-width: 600px; width: 90%;">
+        <div class="modal-content" style="max-width: 800px; width: 95%;">
             <div class="modal-header">
-                <h3>Assign Media to Win</h3>
+                <h3>🎯 Assign Media to Win</h3>
                 <span class="close" id="closeWinSelectionModal">&times;</span>
             </div>
             <div class="modal-body" style="padding: 24px;">
+                <!-- Search Section -->
                 <div class="form-group" style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Search Wins</label>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">🔍 Search Wins</label>
                     <div style="position: relative;">
                         <input type="text" id="winSearchInput" placeholder="Search by win title or coach name..." 
                                style="width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; transition: border-color 0.2s; outline: none;"
@@ -589,13 +591,40 @@
                         <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af;">🔍</span>
                     </div>
                 </div>
-                <div class="wins-list" id="winsList" style="max-height: 400px; overflow-y: auto; border: 2px solid #e5e7eb; border-radius: 8px; background: #f9fafb;">
+
+                <!-- Quick Stats -->
+                <div id="winStats" style="display: flex; gap: 15px; margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #0369a1;" id="totalWinsCount">0</div>
+                        <div style="font-size: 12px; color: #64748b;">Total Wins</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #059669;" id="filteredWinsCount">0</div>
+                        <div style="font-size: 12px; color: #64748b;">Matching</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #dc2626;" id="unassignedWinsCount">0</div>
+                        <div style="font-size: 12px; color: #64748b;">Unassigned</div>
+                    </div>
+                </div>
+
+                <!-- Wins List -->
+                <div class="wins-list" id="winsList" style="max-height: 450px; overflow-y: auto; border: 2px solid #e5e7eb; border-radius: 8px; background: #f9fafb;">
                     <!-- Wins will be populated here -->
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; gap: 12px; justify-content: flex-end;">
-                <button id="unassignMediaFromWin" class="btn btn-secondary" style="padding: 10px 20px; font-size: 14px;">Unassign</button>
-                <button id="assignMediaToWin" class="btn btn-primary" disabled style="padding: 10px 20px; font-size: 14px;">Assign to Selected Win</button>
+            <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid #e5e7eb; background: #f9fafb; display: flex; gap: 12px; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 10px;">
+                    <button id="unassignMediaFromWin" class="btn btn-secondary" style="padding: 10px 20px; font-size: 14px;">
+                        🚫 Unassign
+                    </button>
+                    <button id="createNewWin" class="btn btn-success" style="padding: 10px 20px; font-size: 14px;">
+                        ➕ Create New Win
+                    </button>
+                </div>
+                <button id="assignMediaToWin" class="btn btn-primary" disabled style="padding: 10px 20px; font-size: 14px;">
+                    ✅ Assign to Selected Win
+                </button>
             </div>
         </div>
     </div>

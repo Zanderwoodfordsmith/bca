@@ -15,9 +15,9 @@ firebase.initializeApp(firebaseConfig);
 // Initialize Firestore
 const db = firebase.firestore();
 
-// Initialize Storage
-const storage = firebase.storage();
+// Initialize Storage (commented out since we're not using it yet)
+// const storage = firebase.storage();
 
 // Export for use in other files
 window.db = db;
-window.storage = storage;
+// window.storage = storage;

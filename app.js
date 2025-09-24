@@ -1,7 +1,7 @@
 class ProofWall {
     constructor() {
         this.currentPage = 0;
-        this.pageSize = 20;
+        this.pageSize = 9;
         this.allTestimonials = [];
         this.displayedCount = 0;
         this.filteredTestimonials = [];
@@ -47,6 +47,11 @@ class ProofWall {
             this.filteredTestimonials = [...this.allTestimonials];
             
             console.log('🖼️ Displaying testimonials...');
+            console.log('📊 Display stats:');
+            console.log('  - All testimonials:', this.allTestimonials.length);
+            console.log('  - Filtered testimonials:', this.filteredTestimonials.length);
+            console.log('  - Page size:', this.pageSize);
+            console.log('  - Displaying:', Math.min(this.filteredTestimonials.length, this.pageSize));
             this.displayTestimonials(this.filteredTestimonials.slice(0, this.pageSize));
             this.populateCoachFilter();
             this.updateLoadMoreButton();
@@ -75,27 +80,53 @@ class ProofWall {
             
             console.log('Fetching testimonials from Firebase...');
             
-            // First, let's get ALL wins to see what we have
+            // Get all wins first to debug
             const allWinsSnapshot = await db.collection('wins').get();
-            console.log('🔍 Total wins found:', allWinsSnapshot.docs.length);
+            console.log('🔍 Total wins in database:', allWinsSnapshot.docs.length);
             
-            // Log all win data to see what fields exist
-            allWinsSnapshot.docs.forEach(doc => {
-                const winData = { id: doc.id, ...doc.data() };
-                console.log('📋 Win data:', winData);
-                console.log('   - show_on_wall:', winData.show_on_wall);
-                console.log('   - win_date:', winData.win_date);
-                console.log('   - coach_id:', winData.coach_id);
-                console.log('   - win_title:', winData.win_title);
-                console.log('   - win_description:', winData.win_description);
-                console.log('   - win_category:', winData.win_category);
+            // TEMPORARY: Show Will Walsh for debugging
+            const winsToShow = allWinsSnapshot.docs.filter(doc => {
+                const winData = doc.data();
+                return winData.win_title && winData.win_title.includes('Will Walsh');
             });
             
-            // Get all wins without ordering to avoid index requirement
-            const winsQuery = db.collection('wins');
+            console.log('🎯 Wins with media files:', winsToShow.length);
+            console.log('📊 Filtering stats:');
+            console.log('  - Total wins in database:', allWinsSnapshot.docs.length);
+            console.log('  - Wins with media files:', winsToShow.length);
+            console.log('  - Wins skipped (no media):', allWinsSnapshot.docs.length - winsToShow.length);
             
-            const winsSnapshot = await winsQuery.get();
-            console.log('🎯 All wins found:', winsSnapshot.docs.length);
+            // Debug: Show which wins have media
+            console.log('📸 Wins with media files:');
+            winsToShow.forEach((doc, index) => {
+                const winData = doc.data();
+                console.log(`  ${index + 1}. ${winData.win_title} - Media: ${winData.media_url}`);
+            });
+            
+            // Debug: Show Will Walsh's win data specifically
+            console.log('🔍 Looking for Will Walsh specifically:');
+            allWinsSnapshot.docs.forEach((doc, index) => {
+                const winData = doc.data();
+                if (winData.win_title && winData.win_title.includes('Will Walsh')) {
+                    console.log(`Found Will Walsh win #${index + 1}:`, winData);
+                    console.log('All fields:', Object.keys(winData));
+                    console.log('Media fields:');
+                    console.log('  - media_url:', winData.media_url);
+                    console.log('  - media_type:', winData.media_type);
+                    console.log('  - media_title:', winData.media_title);
+                    console.log('  - media_description:', winData.media_description);
+                    console.log('  - media_format:', winData.media_format);
+                    console.log('  - media_file:', winData.media_file);
+                    console.log('  - media_path:', winData.media_path);
+                    console.log('  - media_link:', winData.media_link);
+                    console.log('  - attachment:', winData.attachment);
+                    console.log('  - file_url:', winData.file_url);
+                    console.log('  - image_url:', winData.image_url);
+                    console.log('  - video_url:', winData.video_url);
+                }
+            });
+            
+            const winsSnapshot = { docs: winsToShow };
             
             // Sort wins by date on the client side (newest first)
             const sortedWins = winsSnapshot.docs.sort((a, b) => {
@@ -110,44 +141,87 @@ class ProofWall {
                 const winData = { id: winDoc.id, ...winDoc.data() };
                 console.log('🔄 Processing win:', winData);
                 
-                // Fetch coach details
-                console.log('👤 Looking for coach with ID:', winData.coach_id);
-                const coachDoc = await db.collection('coaches').doc(winData.coach_id).get();
-                if (!coachDoc.exists) {
-                    console.log('❌ Coach not found for win:', winData.coach_id);
+                // Coach_id is already validated in the filter above
+                const coachIdString = String(winData.coach_id).trim();
+                console.log('✅ Processing win with coach_id:', coachIdString);
+                
+                // Fetch coach details with extra safety
+                try {
+                    console.log('👤 Fetching coach with ID:', coachIdString);
+                    const coachDoc = await db.collection('coaches').doc(coachIdString).get();
+                    
+                    if (!coachDoc.exists) {
+                        console.log('❌ Coach not found for win:', winData.win_title, 'Coach ID:', coachIdString);
+                        continue;
+                    }
+                    
+                    const coachData = { id: coachDoc.id, ...coachDoc.data() };
+                    console.log('✅ Found coach:', coachData.first_name, coachData.last_name);
+                    
+                    // Use actual media fields, not description
+                    let mediaUrl = winData.media_url || '';
+                    let mediaType = winData.media_type || '';
+                    let cleanDescription = winData.win_description || '';
+                    
+                    console.log('🔍 Win data media fields:');
+                    console.log('  - media_url:', winData.media_url);
+                    console.log('  - media_type:', winData.media_type);
+                    console.log('  - media_title:', winData.media_title);
+                    console.log('  - media_description:', winData.media_description);
+                    console.log('  - media_format:', winData.media_format);
+                    
+                    if (mediaUrl) {
+                        console.log('📸 Found media URL:', mediaUrl);
+                    } else {
+                        console.log('❌ No media_url found');
+                    }
+                    
+                    const testimonial = {
+                        win: {
+                            ...winData,
+                            win_description: cleanDescription
+                        },
+                        coach: coachData,
+                        media: {
+                            url: mediaUrl,
+                            type: mediaType,
+                            title: winData.media_title || '',
+                            description: winData.media_description || '',
+                            format: winData.media_format || ''
+                        }
+                    };
+                    
+                    console.log('✅ Created testimonial for:', winData.win_title);
+                    console.log('📎 Media URL:', mediaUrl);
+                    testimonials.push(testimonial);
+                    
+                } catch (coachError) {
+                    console.error('❌ Error fetching coach for win:', winData.win_title, 'Coach ID:', coachIdString, 'Error:', coachError.message);
                     continue;
                 }
-                
-                const coachData = { id: coachDoc.id, ...coachDoc.data() };
-                console.log('✅ Found coach:', coachData);
-                
-                // Use the new media fields from wins instead of proof_assets
-                console.log('📎 Win has media:', winData.media_type, winData.media_url);
-                
-                const testimonial = {
-                    win: winData,
-                    coach: coachData,
-                    media: {
-                        type: winData.media_type,
-                        url: winData.media_url,
-                        title: winData.media_title,
-                        description: winData.media_description,
-                        format: winData.media_format
-                    }
-                };
-                
-                console.log('✅ Created testimonial:', testimonial);
-                testimonials.push(testimonial);
             }
             
             console.log('Total testimonials assembled:', testimonials.length);
+            console.log('📊 FINAL STATS:');
+            console.log('  - Total wins in database:', allWinsSnapshot.docs.length);
+            console.log('  - Wins to show on wall:', winsToShow.length);
+            console.log('  - Testimonials created:', testimonials.length);
+            console.log('  - Wins skipped (no coach):', winsToShow.length - testimonials.length);
             
         } catch (error) {
             console.error('❌ Error fetching testimonials:', error);
             console.error('❌ Error details:', error.message);
-            console.log('🔄 Returning sample data due to error');
-            // Return sample data if Firebase is not configured
-            return this.getSampleData();
+            
+            // Only return sample data for critical Firebase errors, not validation issues
+            if (error.message.includes('Firebase not initialized') || 
+                error.message.includes('permission') || 
+                error.message.includes('network')) {
+                console.log('🔄 Returning sample data due to critical Firebase error');
+                return this.getSampleData();
+            } else {
+                console.log('🔄 Continuing with empty testimonials due to data validation issues');
+                return [];
+            }
         }
         
         return testimonials;
@@ -247,154 +321,39 @@ class ProofWall {
         const { win, coach, media } = testimonial;
         const initials = `${coach.first_name[0]}${coach.last_name[0]}`;
         
-        // Only show join date if it's valid and not the default date
-        const joinDate = coach.join_date ? new Date(coach.join_date.seconds ? coach.join_date.seconds * 1000 : coach.join_date) : null;
-        const isValidJoinDate = joinDate && joinDate.getFullYear() > 2000; // Not the default 1999 date
-        
-        const winDate = win.win_date ? new Date(win.win_date.seconds ? win.win_date.seconds * 1000 : win.win_date).toLocaleDateString('en-GB', { 
-            day: 'numeric', 
-            month: 'short', 
-            year: 'numeric' 
-        }) : 'Date needed';
-        
-        // Enhanced media display - show media with better formatting, hide file names
-        const mediaContent = media && media.url && media.url.trim() !== '' ? `
-            <div class="media-section">
-                <h5 class="media-title">📎 Supporting Evidence</h5>
-                <div class="media-container">
-                    ${(() => {
-                        let mediaHTML = '';
-                        
-                        // Show media content based on type and URL
-                        switch (media.type) {
-                            case 'Video':
-                                // Check if it's a YouTube or Vimeo URL
-                                const isYouTube = media.url.includes('youtube.com') || media.url.includes('youtu.be');
-                                const isVimeo = media.url.includes('vimeo.com');
-                                
-                                if (isYouTube) {
-                                    // Extract YouTube video ID
-                                    const youtubeId = media.url.includes('youtu.be') 
-                                        ? media.url.split('youtu.be/')[1]?.split('?')[0]
-                                        : media.url.split('v=')[1]?.split('&')[0];
-                                    
-                                    if (youtubeId) {
-                                        mediaHTML = `<div class="media-item">
-                                            <iframe width="100%" height="225" 
-                                                src="https://www.youtube.com/embed/${youtubeId}" 
-                                                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                                allowfullscreen style="border-radius: 8px; max-width: 400px;">
-                                            </iframe>
-                                        </div>`;
-                                    } else {
-                                        mediaHTML = `<div class="media-item">
-                                            <a href="${media.url}" target="_blank" class="media-link">🎥 Watch Video</a>
-                                        </div>`;
-                                    }
-                                } else if (isVimeo) {
-                                    // Extract Vimeo video ID
-                                    const vimeoId = media.url.split('vimeo.com/')[1]?.split('?')[0];
-                                    
-                                    if (vimeoId) {
-                                        mediaHTML = `<div class="media-item">
-                                            <iframe width="100%" height="225" 
-                                                src="https://player.vimeo.com/video/${vimeoId}" 
-                                                frameborder="0" allow="autoplay; fullscreen; picture-in-picture" 
-                                                allowfullscreen style="border-radius: 8px; max-width: 400px;">
-                                            </iframe>
-                                        </div>`;
-                                    } else {
-                                        mediaHTML = `<div class="media-item">
-                                            <a href="${media.url}" target="_blank" class="media-link">🎥 Watch Video</a>
-                                        </div>`;
-                                    }
-                                } else {
-                                    // Direct video file
-                                    const videoExtension = media.url.split('.').pop().toLowerCase();
-                                    let videoType = 'video/mp4'; // default
-                                    
-                                    if (videoExtension === 'webm') videoType = 'video/webm';
-                                    else if (videoExtension === 'mov') videoType = 'video/quicktime';
-                                    else if (videoExtension === 'avi') videoType = 'video/x-msvideo';
-                                    else if (videoExtension === 'wmv') videoType = 'video/x-ms-wmv';
-                                    
-                                    mediaHTML = `<div class="media-item">
-                                        <video controls preload="metadata" style="width: 100%; max-width: 400px; border-radius: 8px;">
-                                            <source src="${media.url}" type="${videoType}">
-                                            <source src="${media.url}" type="video/mp4">
-                                            <p>Your browser doesn't support HTML5 video. <a href="${media.url}" target="_blank">Watch video</a> instead.</p>
-                                        </video>
-                                    </div>`;
-                                }
-                                break;
-                            case 'Image':
-                            case 'Screenshot':
-                                mediaHTML = `<div class="media-item">
-                                    <img src="${media.url}" alt="Supporting evidence" style="width: 100%; max-width: 400px; border-radius: 8px;" />
-                                </div>`;
-                                break;
-                            case 'Written':
-                                mediaHTML = `<div class="media-item">
-                                    <div class="quote-content" style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
-                                        ${media.description ? `<p style="margin: 0; font-style: italic;">"${media.description}"</p>` : `<a href="${media.url}" target="_blank" class="quote-link">📄 Read Testimonial</a>`}
-                                    </div>
-                                </div>`;
-                                break;
-                            case 'Interview':
-                                mediaHTML = `<div class="media-item">
-                                    <a href="${media.url}" target="_blank" class="media-link">🎤 Listen to Interview</a>
-                                </div>`;
-                                break;
-                            case 'Audio':
-                                mediaHTML = `<div class="media-item">
-                                    <audio controls style="width: 100%; max-width: 400px;">
-                                        <source src="${media.url}" type="audio/mpeg">
-                                        <source src="${media.url}" type="audio/wav">
-                                        <a href="${media.url}" target="_blank">Listen to audio</a>
-                                    </audio>
-                                </div>`;
-                                break;
-                            case 'Document':
-                                mediaHTML = `<div class="media-item">
-                                    <a href="${media.url}" target="_blank" class="media-link">📄 View Document</a>
-                                </div>`;
-                                break;
-                            default:
-                                mediaHTML = `<div class="media-item">
-                                    <a href="${media.url}" target="_blank" class="media-link">📄 View Evidence</a>
-                                </div>`;
-                        }
-                        
-                        return mediaHTML;
-                    })()}
+        // Display actual media files
+        console.log('🖼️ Creating HTML for media:', media);
+        let contentHTML = '';
+        if (media && media.url && media.url.trim() !== '') {
+            // Display the actual media file
+            contentHTML = `
+                <div class="win-image" style="margin-top: 15px;">
+                    <img src="${media.url}" 
+                         alt="${media.title || 'Win evidence'}" 
+                         style="width: 100%; max-width: 500px; border-radius: 8px; border: 1px solid #ddd;" 
+                         onerror="console.error('❌ Media failed to load:', this.src)" 
+                         onload="console.log('✅ Media loaded successfully:', this.src)" />
                 </div>
-            </div>
-        ` : '';
-
+            `;
+            console.log('📸 Displaying media file:', media.url);
+        } else {
+            contentHTML = '<div style="margin-top: 15px; color: #666;">No media file attached</div>';
+            console.log('❌ No media file to display');
+        }
+        
         return `
             <div class="testimonial-card">
                 <div class="testimonial-header">
                     <div class="coach-avatar">${initials}</div>
                     <div class="coach-info">
-                        <h3>${coach.first_name} ${coach.last_name}</h3>
-                        ${isValidJoinDate ? `<div class="join-date">Member since ${joinDate.toLocaleDateString('en-GB', { 
-                            day: 'numeric', 
-                            month: 'short', 
-                            year: 'numeric' 
-                        })}</div>` : ''}
+                        <h3 class="coach-name">${coach.first_name} ${coach.last_name}</h3>
                     </div>
                 </div>
                 
-                <div class="win-category">${win.win_category || 'Achievement'}</div>
-                
-                <h4 class="win-title">${win.win_title || 'Untitled Win'}</h4>
-                <p class="win-description">${win.win_description || 'No description provided'}</p>
-                
-                ${mediaContent}
-                
-                <div class="win-date">
-                    ${winDate}
-                    <span class="verification-badge verified">✓ Verified</span>
+                <div class="testimonial-content">
+                    <h4 class="win-title">${win.win_title}</h4>
+                    <p class="win-description">${win.win_description || 'No description available.'}</p>
+                    ${contentHTML}
                 </div>
             </div>
         `;
