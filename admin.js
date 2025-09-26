@@ -215,7 +215,15 @@ class AdminPanel {
         this.applyMediaColumns.addEventListener('click', () => this.applyMediaColumnChanges());
         
         // Media modals
-        this.closeAddMediaModal.addEventListener('click', () => this.addMediaModal.classList.remove('show'));
+        this.closeAddMediaModal.addEventListener('click', () => {
+            this.addMediaModal.classList.remove('show');
+            this.resetAddMediaForm();
+        });
+        this.cancelAddMedia = document.getElementById('cancelAddMedia');
+        this.cancelAddMedia.addEventListener('click', () => {
+            this.addMediaModal.classList.remove('show');
+            this.resetAddMediaForm();
+        });
         this.saveNewMedia.addEventListener('click', () => this.saveNewMediaItem());
         this.closeBulkUploadModal.addEventListener('click', () => this.bulkUploadModal.classList.remove('show'));
         this.processBulkUpload.addEventListener('click', () => this.processBulkImageUpload());
@@ -3838,6 +3846,8 @@ class AdminPanel {
     addMedia() {
         // Populate win dropdown
         this.populateWinDropdown('newMediaWin');
+        // Initialize coach search
+        this.initializeCoachSearch();
         this.addMediaModal.classList.add('show');
     }
 
@@ -3861,10 +3871,122 @@ class AdminPanel {
         });
     }
 
+    initializeCoachSearch() {
+        const searchInput = document.getElementById('newMediaCoachSearch');
+        const dropdown = document.getElementById('coachDropdown');
+        const hiddenInput = document.getElementById('newMediaCoach');
+        const selectedDisplay = document.getElementById('selectedCoachDisplay');
+        const coachName = selectedDisplay.querySelector('.coach-name');
+
+        // Clear previous state
+        searchInput.value = '';
+        hiddenInput.value = '';
+        selectedDisplay.style.display = 'none';
+        dropdown.style.display = 'none';
+
+        // Populate dropdown with all coaches
+        this.populateCoachDropdown();
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const options = dropdown.querySelectorAll('.coach-option');
+            
+            options.forEach(option => {
+                const coachName = option.textContent.toLowerCase();
+                if (coachName.includes(query)) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+
+            if (query.length > 0) {
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Focus/blur handling
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.length > 0) {
+                dropdown.style.display = 'block';
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.searchable-select-container')) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    populateCoachDropdown() {
+        const dropdown = document.getElementById('coachDropdown');
+        dropdown.innerHTML = '';
+
+        this.coaches.forEach(coach => {
+            const option = document.createElement('div');
+            option.className = 'coach-option';
+            option.textContent = `${coach.first_name} ${coach.last_name}`;
+            option.dataset.coachId = coach.id;
+            
+            option.addEventListener('click', () => {
+                this.selectCoach(coach.id, `${coach.first_name} ${coach.last_name}`);
+            });
+
+            dropdown.appendChild(option);
+        });
+    }
+
+    selectCoach(coachId, coachName) {
+        const hiddenInput = document.getElementById('newMediaCoach');
+        const searchInput = document.getElementById('newMediaCoachSearch');
+        const selectedDisplay = document.getElementById('selectedCoachDisplay');
+        const coachNameSpan = selectedDisplay.querySelector('.coach-name');
+        const dropdown = document.getElementById('coachDropdown');
+
+        hiddenInput.value = coachId;
+        coachNameSpan.textContent = coachName;
+        selectedDisplay.style.display = 'flex';
+        searchInput.style.display = 'none';
+        dropdown.style.display = 'none';
+    }
+
+    clearCoachSelection() {
+        const hiddenInput = document.getElementById('newMediaCoach');
+        const searchInput = document.getElementById('newMediaCoachSearch');
+        const selectedDisplay = document.getElementById('selectedCoachDisplay');
+        const dropdown = document.getElementById('coachDropdown');
+
+        hiddenInput.value = '';
+        searchInput.value = '';
+        selectedDisplay.style.display = 'none';
+        searchInput.style.display = 'block';
+        dropdown.style.display = 'none';
+    }
+
+    resetAddMediaForm() {
+        // Reset form fields
+        document.getElementById('addMediaForm').reset();
+        
+        // Reset coach selection
+        this.clearCoachSelection();
+        
+        // Reset file input
+        const fileInput = document.getElementById('newMediaFile');
+        if (fileInput) {
+            fileInput.value = '';
+        }
+    }
+
     async saveNewMediaItem() {
         const title = document.getElementById('newMediaTitle').value;
         const type = document.getElementById('newMediaType').value;
         const platform = document.getElementById('newMediaPlatform').value;
+        const coachId = document.getElementById('newMediaCoach').value;
         const url = document.getElementById('newMediaUrl').value;
         const description = document.getElementById('newMediaDescription').value;
         const content = document.getElementById('newMediaContent').value;
@@ -3872,8 +3994,8 @@ class AdminPanel {
         const fileInput = document.getElementById('newMediaFile');
         const file = fileInput.files[0];
 
-        if (!title || !type) {
-            alert('Please fill in required fields');
+        if (!title || !type || !coachId) {
+            alert('Please fill in all required fields including coach selection');
             return;
         }
 
@@ -3883,10 +4005,13 @@ class AdminPanel {
             // If we have a file, use enhanced upload with coach linking and OCR
             if (file) {
                 const mediaData = {
+                    title,
                     type,
                     platform: platform || 'Firebase Storage',
                     url: url || '',
                     description: description || '',
+                    content: content || '',
+                    coach_id: coachId,
                     win_id: winId || null
                 };
                 
@@ -3905,6 +4030,7 @@ class AdminPanel {
                     url: url || '',
                     description: description || '',
                     content: content || '',
+                    coach_id: coachId,
                     win_id: winId || null,
                     created_at: new Date()
                 };
@@ -3954,7 +4080,7 @@ class AdminPanel {
             
             // Close modal and reset form
             this.addMediaModal.classList.remove('show');
-            document.getElementById('addMediaForm').reset();
+            this.resetAddMediaForm();
             
             console.log('Media saved successfully');
         } catch (error) {
@@ -3967,6 +4093,7 @@ class AdminPanel {
         const files = document.getElementById('bulkImageFiles').files;
         const type = document.getElementById('bulkImageType').value;
         const winId = document.getElementById('bulkImageWin').value;
+        const storage = window.storage;
 
         if (files.length === 0 || !type) {
             alert('Please select files and type');
@@ -3997,6 +4124,7 @@ class AdminPanel {
         // Test Firebase Storage connection
         try {
             console.log('Testing Firebase Storage connection...');
+            const storage = window.storage;
             console.log('Storage object:', storage);
             console.log('Storage bucket:', storage.app.options.storageBucket);
             
@@ -4730,6 +4858,7 @@ class AdminPanel {
      */
     async processEnhancedMediaUpload(file, mediaData) {
         try {
+            const storage = window.storage;
             // Extract coach name and title from filename
             const coachName = this.extractCoachNameFromFilename(file.name);
             const title = this.extractTitleFromFilename(file.name);

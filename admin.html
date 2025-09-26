@@ -454,64 +454,146 @@
 
     <!-- Add Media Modal -->
     <div id="addMediaModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content modern-modal">
             <div class="modal-header">
-                <h3>Add Media</h3>
-                <span class="close" id="closeAddMediaModal">&times;</span>
+                <div class="modal-title">
+                    <h3>📎 Add New Media</h3>
+                    <p class="modal-subtitle">Upload and organize media content for your coaches</p>
+                </div>
+                <button class="close-btn" id="closeAddMediaModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body">
-                <form id="addMediaForm">
-                    <div class="form-group">
-                        <label for="newMediaTitle">Title *</label>
-                        <input type="text" id="newMediaTitle" required>
+                <form id="addMediaForm" class="modern-form">
+                    <!-- Coach Selection -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h4>👤 Coach Assignment</h4>
+                            <span class="required-badge">Required</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="newMediaCoach">Select Coach *</label>
+                            <div class="searchable-select-container">
+                                <input type="text" id="newMediaCoachSearch" placeholder="Search coaches by name..." autocomplete="off">
+                                <div class="searchable-select-dropdown" id="coachDropdown" style="display: none;">
+                                    <!-- Coach options will be populated here -->
+                                </div>
+                                <input type="hidden" id="newMediaCoach" required>
+                                <div class="selected-coach" id="selectedCoachDisplay" style="display: none;">
+                                    <span class="coach-name"></span>
+                                    <button type="button" class="clear-selection" onclick="clearCoachSelection()">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="newMediaType">Type *</label>
-                        <select id="newMediaType" required>
-                            <option value="">Select Type</option>
-                            <option value="Video">Video</option>
-                            <option value="Screenshot">Screenshot</option>
-                            <option value="Written">Written</option>
-                            <option value="Audio">Audio</option>
-                            <option value="Image">Image</option>
-                        </select>
+
+                    <!-- Media Details -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h4>📄 Media Details</h4>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="newMediaTitle">Title *</label>
+                                <input type="text" id="newMediaTitle" required placeholder="Enter media title">
+                            </div>
+                            <div class="form-group">
+                                <label for="newMediaType">Type *</label>
+                                <select id="newMediaType" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Video">🎥 Video</option>
+                                    <option value="Screenshot">📸 Screenshot</option>
+                                    <option value="Written">📝 Written</option>
+                                    <option value="Audio">🎵 Audio</option>
+                                    <option value="Image">🖼️ Image</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="newMediaPlatform">Platform</label>
+                            <select id="newMediaPlatform">
+                                <option value="">Select Platform</option>
+                                <option value="YouTube">📺 YouTube</option>
+                                <option value="Firebase Storage">☁️ Firebase Storage</option>
+                                <option value="Database">💾 Database</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="newMediaPlatform">Platform</label>
-                        <select id="newMediaPlatform">
-                            <option value="">Select Platform</option>
-                            <option value="YouTube">YouTube</option>
-                            <option value="Firebase Storage">Firebase Storage</option>
-                            <option value="Database">Database</option>
-                        </select>
+
+                    <!-- Media Source -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h4>🔗 Media Source</h4>
+                        </div>
+                        <div class="form-group">
+                            <label for="newMediaUrl">URL</label>
+                            <input type="url" id="newMediaUrl" placeholder="https://example.com/media">
+                        </div>
+                        <div class="form-group">
+                            <label for="newMediaFile">Or Upload File</label>
+                            <div class="file-upload-area">
+                                <input type="file" id="newMediaFile" accept="image/*,video/*,.pdf,.doc,.docx,.txt">
+                                <div class="file-upload-content">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7,10 12,15 17,10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    <p>Click to select file or drag and drop</p>
+                                    <small>For screenshots, text will be automatically extracted</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="newMediaUrl">URL</label>
-                        <input type="url" id="newMediaUrl" placeholder="https://...">
+
+                    <!-- Content Details -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h4>📝 Content Details</h4>
+                        </div>
+                        <div class="form-group">
+                            <label for="newMediaDescription">Description</label>
+                            <textarea id="newMediaDescription" rows="3" placeholder="Describe the media content..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="newMediaContent">Content (for search)</label>
+                            <textarea id="newMediaContent" rows="4" placeholder="Full transcript, screenshot text, etc."></textarea>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="newMediaFile">Or Upload File</label>
-                        <input type="file" id="newMediaFile" accept="image/*,video/*,.pdf,.doc,.docx,.txt">
-                        <small style="color: #6b7280; font-size: 12px;">For screenshots, text will be automatically extracted</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="newMediaDescription">Description</label>
-                        <textarea id="newMediaDescription" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="newMediaContent">Content (for search)</label>
-                        <textarea id="newMediaContent" rows="4" placeholder="Full transcript, screenshot text, etc."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="newMediaWin">Assign to Win</label>
-                        <select id="newMediaWin">
-                            <option value="">Select Win (optional)</option>
-                        </select>
+
+                    <!-- Win Assignment -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h4>🏆 Win Assignment</h4>
+                        </div>
+                        <div class="form-group">
+                            <label for="newMediaWin">Assign to Win</label>
+                            <select id="newMediaWin">
+                                <option value="">Select Win (optional)</option>
+                            </select>
+                        </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button id="saveNewMedia" class="btn btn-primary">Save Media</button>
+                <button type="button" class="btn btn-secondary" id="cancelAddMedia">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveNewMedia">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17,21 17,13 7,13 7,21"></polyline>
+                        <polyline points="7,3 7,8 15,8"></polyline>
+                    </svg>
+                    Save Media
+                </button>
             </div>
         </div>
     </div>

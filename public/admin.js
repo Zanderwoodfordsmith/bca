@@ -1,6 +1,6 @@
 class AdminPanel {
     constructor() {
-        console.log('AdminPanel starting...');
+        console.log('AdminPanel starting... v2.1');
         this.coaches = [];
         this.wins = [];
         this.proof_assets = [];
@@ -215,7 +215,15 @@ class AdminPanel {
         this.applyMediaColumns.addEventListener('click', () => this.applyMediaColumnChanges());
         
         // Media modals
-        this.closeAddMediaModal.addEventListener('click', () => this.addMediaModal.classList.remove('show'));
+        this.closeAddMediaModal.addEventListener('click', () => {
+            this.addMediaModal.classList.remove('show');
+            this.resetAddMediaForm();
+        });
+        this.cancelAddMedia = document.getElementById('cancelAddMedia');
+        this.cancelAddMedia.addEventListener('click', () => {
+            this.addMediaModal.classList.remove('show');
+            this.resetAddMediaForm();
+        });
         this.saveNewMedia.addEventListener('click', () => this.saveNewMediaItem());
         this.closeBulkUploadModal.addEventListener('click', () => this.bulkUploadModal.classList.remove('show'));
         this.processBulkUpload.addEventListener('click', () => this.processBulkImageUpload());
@@ -1197,123 +1205,249 @@ class AdminPanel {
         });
         
         detailPage.innerHTML = `
-            <div style="position: absolute; top: 20px; right: 20px;">
-                <button onclick="adminPanel.showMainView()" style="background: #ef4444; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">
-                    ×
-                </button>
+            <div style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <!-- Header -->
+                <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 20px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+                    <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <button onclick="adminPanel.showMainView()" 
+                                style="background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3); padding: 12px 24px; border-radius: 12px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;"
+                                onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">
+                            ← Back to Coaches
+                        </button>
+                        <h1 style="margin: 0; color: white; font-size: 32px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${coach.first_name} ${coach.last_name}</h1>
+                        <div style="display: flex; gap: 12px;">
+                            <button onclick="adminPanel.editCoach('${coach.id}')" 
+                                    style="background: rgba(34, 197, 94, 0.8); color: white; border: none; padding: 12px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; transition: all 0.3s ease;"
+                                    onmouseover="this.style.background='rgba(34, 197, 94, 1)'" onmouseout="this.style.background='rgba(34, 197, 94, 0.8)'">
+                                ✏️ Edit Coach
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div style="max-width: 1400px; margin: 0 auto; padding: 40px 20px;">
+                    <!-- Quick Stats Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
+                        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); padding: 24px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2); text-align: center;">
+                            <div style="font-size: 36px; font-weight: bold; color: white; margin-bottom: 8px;">${coachWins.length}</div>
+                            <div style="color: rgba(255, 255, 255, 0.9); font-weight: 600;">Total Wins</div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); padding: 24px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2); text-align: center;">
+                            <div style="font-size: 36px; font-weight: bold; color: white; margin-bottom: 8px;">${coachMedia.length}</div>
+                            <div style="color: rgba(255, 255, 255, 0.9); font-weight: 600;">Media Items</div>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); padding: 24px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2); text-align: center;">
+                            <div style="font-size: 36px; font-weight: bold; color: white; margin-bottom: 8px;">${coach.email ? '✓' : '✗'}</div>
+                            <div style="color: rgba(255, 255, 255, 0.9); font-weight: 600;">Contact Info</div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); padding: 24px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.2); margin-bottom: 40px;">
+                        <h3 style="margin: 0 0 20px 0; color: white; font-size: 20px; font-weight: 600;">🚀 Quick Actions</h3>
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <button onclick="adminPanel.showNewWinModal('${coach.id}')" 
+                                    style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);"
+                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.3)'">
+                                ➕ Add New Win
+                            </button>
+                            <button onclick="adminPanel.showAddMediaModal('${coach.id}')" 
+                                    style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);"
+                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.3)'">
+                                📎 Add Media
+                            </button>
+                            <button onclick="adminPanel.linkWinToMedia('${coach.id}')" 
+                                    style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);"
+                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(139, 92, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(139, 92, 246, 0.3)'">
+                                🔗 Link Win & Media
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Wins Section -->
+                    <div style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 32px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.3); margin-bottom: 30px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h3 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 700;">🏆 Wins</h3>
+                            <span style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px;">
+                                ${coachWins.length} Total
+                            </span>
+                        </div>
+                        ${coachWins.length > 0 ? `
+                            <div style="display: grid; gap: 16px;">
+                                ${coachWins.map(win => {
+                                    const winMedia = this.media.filter(m => m.win_id === win.id);
+                                    return `
+                                        <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; transition: all 0.3s ease; cursor: pointer;"
+                                             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.1)'" 
+                                             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+                                             onclick="adminPanel.showWinDetail('${win.id}')">
+                                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                                <h4 style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">${win.win_title || 'Untitled Win'}</h4>
+                                                <div style="display: flex; gap: 8px; align-items: center;">
+                                                    <span style="background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                                        📎 ${winMedia.length} media
+                                                    </span>
+                                                    <span style="background: #f3f4f6; color: #6b7280; padding: 4px 12px; border-radius: 12px; font-size: 12px;">
+                                                        ${win.win_date ? new Date(win.win_date.seconds * 1000).toLocaleDateString() : 'No Date'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            ${win.win_description ? `<p style="margin: 0; color: #6b7280; line-height: 1.5;">${win.win_description}</p>` : ''}
+                                            ${win.win_category ? `<div style="margin-top: 12px;"><span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">${win.win_category}</span></div>` : ''}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : `
+                            <div style="text-align: center; padding: 40px; color: #6b7280;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">🏆</div>
+                                <p style="font-size: 18px; margin: 0 0 16px 0; font-weight: 600;">No wins yet</p>
+                                <p style="margin: 0; opacity: 0.8;">Start by adding the first win for ${coach.first_name}!</p>
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Media Section -->
+                    <div style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 32px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h3 style="margin: 0; color: #1f2937; font-size: 24px; font-weight: 700;">📎 Media</h3>
+                            <span style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px;">
+                                ${coachMedia.length} Total
+                            </span>
+                        </div>
+                        ${coachMedia.length > 0 ? `
+                            <div style="display: grid; gap: 16px;">
+                                ${coachMedia.map(media => {
+                                    const win = this.wins.find(w => w.id === media.win_id);
+                                    return `
+                                        <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; transition: all 0.3s ease; cursor: pointer;"
+                                             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.1)'" 
+                                             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+                                             onclick="adminPanel.showEditMediaModal('${media.id}')">
+                                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                                <h4 style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">${media.title || 'Untitled Media'}</h4>
+                                                <div style="display: flex; gap: 8px; align-items: center;">
+                                                    <span style="background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                                        ${media.type || 'Unknown'}
+                                                    </span>
+                                                    ${win ? `<span style="background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 12px; font-size: 12px;">${win.win_title}</span>` : ''}
+                                                </div>
+                                            </div>
+                                            ${media.description ? `<p style="margin: 0; color: #6b7280; line-height: 1.5;">${media.description}</p>` : ''}
+                                            ${media.url ? `<div style="margin-top: 12px;"><a href="${media.url}" target="_blank" style="color: #3b82f6; text-decoration: none; font-weight: 600;">🔗 View Media →</a></div>` : ''}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : `
+                            <div style="text-align: center; padding: 40px; color: #6b7280;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">📎</div>
+                                <p style="font-size: 18px; margin: 0 0 16px 0; font-weight: 600;">No media yet</p>
+                                <p style="margin: 0; opacity: 0.8;">Add media to showcase ${coach.first_name}'s wins!</p>
+                            </div>
+                        `}
+                    </div>
+                </div>
             </div>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h1 style="margin: 0; color: #1f2937;">${coach.first_name} ${coach.last_name}</h1>
-                <button onclick="adminPanel.editCoach('${coach.id}')" style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                    ✏️ Edit Coach
-                </button>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
-                <div>
-                    <p><strong>Email:</strong> ${coach.email || 'Not provided'}</p>
-                    <p><strong>Gender:</strong> ${coach.gender || 'Not specified'}</p>
-                    <p><strong>Join Date:</strong> ${coach.join_date ? this.formatDate(coach.join_date) : 'Not specified'}</p>
-                    <p><strong>Phone:</strong> ${coach.phone || 'Not provided'}</p>
-                    <p><strong>Website:</strong> ${coach.website ? `<a href="${coach.website}" target="_blank">${coach.website}</a>` : 'Not provided'}</p>
-                </div>
-                <div>
-                    <p><strong>LinkedIn:</strong> ${coach.linkedin_url ? `<a href="${coach.linkedin_url}" target="_blank">${coach.linkedin_url}</a>` : 'Not provided'}</p>
-                    <p><strong>Book Call:</strong> ${coach.book_call_url ? `<a href="${coach.book_call_url}" target="_blank">Book a Call</a>` : 'Not provided'}</p>
-                    <p><strong>Profile Image:</strong> ${coach.profile_image ? `<a href="${coach.profile_image}" target="_blank">View Image</a>` : 'Not provided'}</p>
-                </div>
-            </div>
-            
-            <div style="margin-bottom: 30px;">
-                <h3 style="color: #1f2937; margin-bottom: 10px;">Bio</h3>
-                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-                    <p style="margin: 0; line-height: 1.6;">${coach.bio || 'No bio provided'}</p>
-                </div>
-            </div>
-            
-            <h2 style="margin-bottom: 20px; color: #1f2937;">Wins (${coachWins.length})</h2>
-            ${coachWins.length === 0 ? 
-                '<p style="color: #6b7280;">No wins found</p>' :
-                `
-                <div style="background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #f9fafb;">
-                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Title</th>
-                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Category</th>
-                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Date</th>
-                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Assets</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${coachWins.map(win => {
-                                const linkedAssets = this.proof_assets.filter(asset => asset.win_id === win.id);
-                                return `
-                                <tr style="border-bottom: 1px solid #f3f4f6; cursor: pointer;" onclick="adminPanel.showWinDetail('${win.id}')">
-                                    <td style="padding: 12px 16px; color: #1f2937; font-weight: 500;">${win.win_title || 'Untitled'}</td>
-                                    <td style="padding: 12px 16px; color: #6b7280;">${win.win_category || 'Uncategorized'}</td>
-                                    <td style="padding: 12px 16px; color: #6b7280;">${this.formatDate(win.win_date)}</td>
-                                    <td style="padding: 12px 16px; color: #6b7280;">${linkedAssets.length} assets</td>
-                                </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                `
-            }
-            
-            <h2 style="margin-bottom: 20px; color: #1f2937; margin-top: 40px;">Media (${this.media.filter(media => media.coach_id === coachId).length})</h2>
-            ${this.media.filter(media => media.coach_id === coachId).length === 0 ? 
-                '<p style="color: #6b7280;">No media found</p>' :
-                `
-                <div style="background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #f9fafb;">
-                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Title</th>
-                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Type</th>
-                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Platform</th>
-                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Created</th>
-                                <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${this.media.filter(media => media.coach_id === coachId).map(media => {
-                                const win = media.win_id ? this.wins.find(w => w.id === media.win_id) : null;
-                                return `
-                                <tr style="border-bottom: 1px solid #f3f4f6;">
-                                    <td style="padding: 12px 16px; color: #1f2937; font-weight: 500;">${media.title || 'Untitled'}</td>
-                                    <td style="padding: 12px 16px; color: #6b7280;">${media.type || 'Unknown'}</td>
-                                    <td style="padding: 12px 16px; color: #6b7280;">${media.platform || 'Unknown'}</td>
-                                    <td style="padding: 12px 16px; color: #6b7280;">${this.formatDate(media.created_at)}</td>
-                                    <td style="padding: 12px 16px; color: #6b7280;">
-                                        <button onclick="adminPanel.showEditMediaModal('${media.id}')" style="background: #3b82f6; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-right: 5px;">
-                                            Edit
-                                        </button>
-                                        ${media.url ? `
-                                            <a href="${media.url}" target="_blank" style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; text-decoration: none;">
-                                                View
-                                            </a>
-                                        ` : ''}
-                                        ${win ? `
-                                            <button onclick="adminPanel.showWinDetail('${win.id}')" style="background: #f59e0b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 5px;">
-                                                Win
-                                            </button>
-                                        ` : ''}
-                                    </td>
-                                </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                `
-            }
         `;
         
         document.body.appendChild(detailPage);
+    }
+
+    // New helper functions for the modern coach detail page
+    showNewWinModal(coachId) {
+        // Pre-populate the coach field
+        const coachSelect = document.getElementById('newWinCoach');
+        if (coachSelect) {
+            coachSelect.value = coachId;
+        }
+        this.showNewWinModal();
+    }
+
+    showAddMediaModal(coachId) {
+        // Pre-populate the coach field if needed
+        this.showAddMediaModal();
+    }
+
+    linkWinToMedia(coachId) {
+        // Create a simple modal for linking wins to media
+        const modal = document.createElement('div');
+        modal.className = 'modal show';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px; width: 95%;">
+                <div class="modal-header">
+                    <h3>🔗 Link Win & Media</h3>
+                    <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+                </div>
+                <div class="modal-body" style="padding: 24px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h4 style="margin: 0 0 16px 0; color: #1f2937;">Select Win</h4>
+                            <select id="linkWinSelect" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                                <option value="">Choose a win...</option>
+                                ${this.wins.filter(win => win.coach_id === coachId).map(win => `
+                                    <option value="${win.id}">${win.win_title || 'Untitled Win'}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0 0 16px 0; color: #1f2937;">Select Media</h4>
+                            <select id="linkMediaSelect" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px;">
+                                <option value="">Choose media...</option>
+                                ${this.media.filter(media => {
+                                    const win = this.wins.find(w => w.id === media.win_id);
+                                    return !win || win.coach_id !== coachId;
+                                }).map(media => `
+                                    <option value="${media.id}">${media.title || 'Untitled Media'}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top: 24px; text-align: center;">
+                        <button onclick="adminPanel.performWinMediaLink()" 
+                                style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; padding: 12px 32px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 16px;">
+                            🔗 Link Selected Items
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    async performWinMediaLink() {
+        const winId = document.getElementById('linkWinSelect').value;
+        const mediaId = document.getElementById('linkMediaSelect').value;
+        
+        if (!winId || !mediaId) {
+            alert('Please select both a win and media item to link.');
+            return;
+        }
+
+        try {
+            await this.db.collection('media').doc(mediaId).update({
+                win_id: winId
+            });
+            
+            // Close modal
+            document.querySelector('.modal.show').remove();
+            
+            // Refresh the coach detail view
+            const coachDetailPage = document.getElementById('coachDetailPage');
+            if (coachDetailPage) {
+                const coachId = this.coaches.find(c => c.wins && c.wins.some(w => w.id === winId))?.id;
+                if (coachId) {
+                    this.showCoachDetail(coachId);
+                }
+            }
+            
+            console.log('Win and media linked successfully');
+            alert('Win and media linked successfully!');
+        } catch (error) {
+            console.error('Error linking win and media:', error);
+            alert('Error linking win and media');
+        }
     }
 
     // Function to update existing wins to show on wall
@@ -3578,7 +3712,9 @@ class AdminPanel {
             const winTitle = win ? win.win_title : 'Unassigned';
             const coachName = coach ? `${coach.first_name} ${coach.last_name}` : 'No Coach';
             const isImage = media.type === 'Screenshot' || media.type === 'Image';
-            const previewHtml = isImage && media.url ? `<img src="${media.url}" alt="preview" class="media-preview-thumb" />` : '<div class="media-preview-thumb" style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;">—</div>';
+            const previewHtml = isImage && media.url ? 
+                `<img src="${media.url}" alt="preview" class="media-preview-thumb" style="width:64px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;" />` : 
+                '<div class="media-preview-thumb" style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;width:64px;height:40px;background:#f3f4f6;border-radius:6px;border:1px solid #e5e7eb;">—</div>';
             
             return `
                 <tr>
@@ -3710,6 +3846,8 @@ class AdminPanel {
     addMedia() {
         // Populate win dropdown
         this.populateWinDropdown('newMediaWin');
+        // Initialize coach search
+        this.initializeCoachSearch();
         this.addMediaModal.classList.add('show');
     }
 
@@ -3733,10 +3871,122 @@ class AdminPanel {
         });
     }
 
+    initializeCoachSearch() {
+        const searchInput = document.getElementById('newMediaCoachSearch');
+        const dropdown = document.getElementById('coachDropdown');
+        const hiddenInput = document.getElementById('newMediaCoach');
+        const selectedDisplay = document.getElementById('selectedCoachDisplay');
+        const coachName = selectedDisplay.querySelector('.coach-name');
+
+        // Clear previous state
+        searchInput.value = '';
+        hiddenInput.value = '';
+        selectedDisplay.style.display = 'none';
+        dropdown.style.display = 'none';
+
+        // Populate dropdown with all coaches
+        this.populateCoachDropdown();
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const options = dropdown.querySelectorAll('.coach-option');
+            
+            options.forEach(option => {
+                const coachName = option.textContent.toLowerCase();
+                if (coachName.includes(query)) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+
+            if (query.length > 0) {
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Focus/blur handling
+        searchInput.addEventListener('focus', () => {
+            if (searchInput.value.length > 0) {
+                dropdown.style.display = 'block';
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.searchable-select-container')) {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    populateCoachDropdown() {
+        const dropdown = document.getElementById('coachDropdown');
+        dropdown.innerHTML = '';
+
+        this.coaches.forEach(coach => {
+            const option = document.createElement('div');
+            option.className = 'coach-option';
+            option.textContent = `${coach.first_name} ${coach.last_name}`;
+            option.dataset.coachId = coach.id;
+            
+            option.addEventListener('click', () => {
+                this.selectCoach(coach.id, `${coach.first_name} ${coach.last_name}`);
+            });
+
+            dropdown.appendChild(option);
+        });
+    }
+
+    selectCoach(coachId, coachName) {
+        const hiddenInput = document.getElementById('newMediaCoach');
+        const searchInput = document.getElementById('newMediaCoachSearch');
+        const selectedDisplay = document.getElementById('selectedCoachDisplay');
+        const coachNameSpan = selectedDisplay.querySelector('.coach-name');
+        const dropdown = document.getElementById('coachDropdown');
+
+        hiddenInput.value = coachId;
+        coachNameSpan.textContent = coachName;
+        selectedDisplay.style.display = 'flex';
+        searchInput.style.display = 'none';
+        dropdown.style.display = 'none';
+    }
+
+    clearCoachSelection() {
+        const hiddenInput = document.getElementById('newMediaCoach');
+        const searchInput = document.getElementById('newMediaCoachSearch');
+        const selectedDisplay = document.getElementById('selectedCoachDisplay');
+        const dropdown = document.getElementById('coachDropdown');
+
+        hiddenInput.value = '';
+        searchInput.value = '';
+        selectedDisplay.style.display = 'none';
+        searchInput.style.display = 'block';
+        dropdown.style.display = 'none';
+    }
+
+    resetAddMediaForm() {
+        // Reset form fields
+        document.getElementById('addMediaForm').reset();
+        
+        // Reset coach selection
+        this.clearCoachSelection();
+        
+        // Reset file input
+        const fileInput = document.getElementById('newMediaFile');
+        if (fileInput) {
+            fileInput.value = '';
+        }
+    }
+
     async saveNewMediaItem() {
         const title = document.getElementById('newMediaTitle').value;
         const type = document.getElementById('newMediaType').value;
         const platform = document.getElementById('newMediaPlatform').value;
+        const coachId = document.getElementById('newMediaCoach').value;
         const url = document.getElementById('newMediaUrl').value;
         const description = document.getElementById('newMediaDescription').value;
         const content = document.getElementById('newMediaContent').value;
@@ -3744,8 +3994,8 @@ class AdminPanel {
         const fileInput = document.getElementById('newMediaFile');
         const file = fileInput.files[0];
 
-        if (!title || !type) {
-            alert('Please fill in required fields');
+        if (!title || !type || !coachId) {
+            alert('Please fill in all required fields including coach selection');
             return;
         }
 
@@ -3755,10 +4005,13 @@ class AdminPanel {
             // If we have a file, use enhanced upload with coach linking and OCR
             if (file) {
                 const mediaData = {
+                    title,
                     type,
                     platform: platform || 'Firebase Storage',
                     url: url || '',
                     description: description || '',
+                    content: content || '',
+                    coach_id: coachId,
                     win_id: winId || null
                 };
                 
@@ -3777,6 +4030,7 @@ class AdminPanel {
                     url: url || '',
                     description: description || '',
                     content: content || '',
+                    coach_id: coachId,
                     win_id: winId || null,
                     created_at: new Date()
                 };
@@ -3826,7 +4080,7 @@ class AdminPanel {
             
             // Close modal and reset form
             this.addMediaModal.classList.remove('show');
-            document.getElementById('addMediaForm').reset();
+            this.resetAddMediaForm();
             
             console.log('Media saved successfully');
         } catch (error) {
@@ -3839,6 +4093,7 @@ class AdminPanel {
         const files = document.getElementById('bulkImageFiles').files;
         const type = document.getElementById('bulkImageType').value;
         const winId = document.getElementById('bulkImageWin').value;
+        const storage = window.storage;
 
         if (files.length === 0 || !type) {
             alert('Please select files and type');
@@ -3869,6 +4124,7 @@ class AdminPanel {
         // Test Firebase Storage connection
         try {
             console.log('Testing Firebase Storage connection...');
+            const storage = window.storage;
             console.log('Storage object:', storage);
             console.log('Storage bucket:', storage.app.options.storageBucket);
             
@@ -3957,22 +4213,22 @@ class AdminPanel {
                 console.log('Processing file:', file.name);
                 console.log('Extracted coach name:', coachName);
                 console.log('Extracted title:', title);
+                console.log('Available coaches:', this.coaches.map(c => `${c.first_name} ${c.last_name}`));
                 
                 // Find matching coach
                 const coach = coachName ? this.findCoachByName(coachName) : null;
                 
-                // Extract text if it's an image (with option to skip)
+                // Extract text if it's an image
                 statusSpan.textContent = 'Extracting text...';
                 let extractedText = '';
                 if (file.type.startsWith('image/') && (type === 'Screenshot' || type === 'Image')) {
                     try {
                         console.log('Starting OCR for file:', file.name);
-                        // Skip OCR for now to test upload - uncomment next line to enable OCR
-                        // extractedText = await Promise.race([
-                        //     this.extractTextFromImage(file),
-                        //     new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout after 30 seconds')), 30000))
-                        // ]);
-                        console.log('OCR skipped for file:', file.name);
+                        extractedText = await Promise.race([
+                            this.extractTextFromImage(file),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('OCR timeout after 30 seconds')), 30000))
+                        ]);
+                        console.log('OCR completed for file:', file.name, 'Text length:', extractedText.length);
                     } catch (ocrError) {
                         console.error('OCR failed for file:', file.name, ocrError);
                         extractedText = ''; // Continue without OCR if it fails
@@ -4602,6 +4858,7 @@ class AdminPanel {
      */
     async processEnhancedMediaUpload(file, mediaData) {
         try {
+            const storage = window.storage;
             // Extract coach name and title from filename
             const coachName = this.extractCoachNameFromFilename(file.name);
             const title = this.extractTitleFromFilename(file.name);
